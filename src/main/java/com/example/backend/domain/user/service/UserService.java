@@ -33,7 +33,6 @@ public class UserService{
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-        // DTO의 profileImage와 엔티티의 profileImgUrl 매핑 주의
         user.updateProfile(request.getNickname(), request.getProfileImage());
     }
 
@@ -64,4 +63,12 @@ public class UserService{
         return userRepository.save(user);
     }
 
+    // 5. 튜토리얼 완료 처리
+    @Transactional
+    public void completeTutorial(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+
+        user.finishTutorial(); // Entity 메서드 호출 (Dirty Checking으로 자동 저장)
+    }
 }
