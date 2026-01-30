@@ -42,7 +42,7 @@ public class AnalysisController {
     @GetMapping
     public ResponseEntity<String> requestResult(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam String taskId
+            @PathVariable String taskId
     ) {
         /*
           TODO
