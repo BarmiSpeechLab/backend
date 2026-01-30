@@ -1,9 +1,7 @@
 package com.example.backend.domain.ai.controller;
 
-import com.example.backend.domain.ai.dto.AnalysisRequestDto;
-import com.example.backend.domain.ai.producer.AiClient;
+import com.example.backend.domain.ai.dto.IntegratedAnalysisResult;
 import com.example.backend.domain.ai.service.AnalysisService;
-import com.example.backend.global.infra.file.FileService;
 import com.example.backend.global.userdetails.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,12 +36,14 @@ public class AnalysisController {
         return ResponseEntity.ok("저장 성공: " + taskId);
     }
 
-    @Operation(summary = "음성데이터 피드백 결과 요청", description = "음성 파일에 대한 AI 분석 결과를 요청합니다")
-    @GetMapping
+    @Operation(summary = "음성데이터 피드백 결과 요청(Polling)", description = "음성 파일에 대한 AI 분석 결과를 요청합니다")
+    @GetMapping("/{taskId}")
     public ResponseEntity<String> requestResult(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable String taskId
     ) {
+        // 캐시 조회
+        IntegratedAnalysisResult result = analysisService.getResult(taskId);
         /*
           TODO
             1.taskId로 캐시에 저장된 전체 피드백 결과를 가져오기
@@ -51,7 +51,7 @@ public class AnalysisController {
             3.user log(방문기록) 테이블 업데이트
             4.전체 결과 반환
         */
-        return ResponseEntity.ok("저장 성공: " + taskId);
+        return ResponseEntity.ok("저장 성공: " + result);
     }
 
 }

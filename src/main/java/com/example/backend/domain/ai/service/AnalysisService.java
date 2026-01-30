@@ -66,9 +66,8 @@ public class AnalysisService {
         return request.getMetadata().getRequestId();
     }
 
-    // AI 결과 임시저장 서비스 메서드
+    // AI 결과 통합 저장 서비스 메서드
     // AI -> Spring Cache
-    // ★ 통합 저장 메서드 (하나로 통일!)
     public void saveResult(String taskId, String type, Map<String, Object> rawData) {
         // 1. 스프링 캐시 매니저에서 껍데기(Spring Cache) 가져오기
         org.springframework.cache.Cache springCache = cacheManager.getCache("analysis_results");
@@ -101,6 +100,11 @@ public class AnalysisService {
         });
 
         log.info("데이터 병합 완료 [Type: {}] TaskId: {}", type, taskId);
+    }
+    // 조회 메서드
+    public IntegratedAnalysisResult getResult(String taskId) {
+        var cache = cacheManager.getCache("analysis_results");
+        return (cache != null) ? cache.get(taskId, IntegratedAnalysisResult.class) : null;
     }
 
 }
