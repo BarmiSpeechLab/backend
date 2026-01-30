@@ -1,10 +1,11 @@
 package com.example.backend.domain.ai.producer;
 
-import com.example.backend.domain.ai.dto.AnalysisRequestDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -17,7 +18,7 @@ public class AiClient {
     private final String EXCHANGE_NAME = "ai.exchange";
     private final String ROUTING_KEY = "ai.job";
 
-    public void sendJob(AnalysisRequestDto requestDto) {
+    public void sendJob(Map<String, Object> requestDto) {
         log.info("AI 분석 요청 전송: {}", requestDto);
         rabbitTemplate.convertAndSend(EXCHANGE_NAME, ROUTING_KEY, requestDto);
     }
