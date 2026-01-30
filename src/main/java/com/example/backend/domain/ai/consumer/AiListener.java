@@ -1,6 +1,5 @@
 package com.example.backend.domain.ai.consumer;
 
-import com.example.backend.domain.ai.dto.AnalysisResultDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
@@ -8,12 +7,11 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class RabbitMQConsumer {
+public class AiListener {
 
     // private final FeedbackRepository feedbackRepository; // 나중에 DB 업데이트할 때 필요
 

@@ -1,40 +1,22 @@
-package com.example.backend.domain.ai.controller;
+package com.example.backend.domain.ai.service;
 
 import com.example.backend.domain.ai.dto.AnalysisRequestDto;
-import com.example.backend.domain.ai.producer.RabbitMQProducer;
+import com.example.backend.domain.ai.producer.AiClient;
 import com.example.backend.global.infra.file.FileService;
-import com.example.backend.global.userdetails.CustomUserDetails;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.*;
 
-@Tag(name = "AI 분석 API", description = "RabbitMQ 테스트용 API")
-@RestController
-@RequestMapping("/api/feedback")
+@Service
 @RequiredArgsConstructor
-public class FeedbackRequestController {
-
-    private final RabbitMQProducer rabbitMqProducer;
+public class AnalysisService {
+    private final AiClient aiClient;
     private final FileService fileService;
 
-    @Operation(summary = "음성 파일 제출 및 분석 요청", description = "음성 파일을 업로드하고 AI 분석을 요청합니다.")
-    @PostMapping(
-            value = "/submit",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
-    public ResponseEntity<String> requestFeedback(
-            @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam("curriculumId") Long curriculumId,
-            @RequestPart("file") MultipartFile file
-    ) {
+    public String askAnalysis(MultipartFile file) {
         // 파일저장
         String savedFileName = fileService.saveFile(file);
 
@@ -72,9 +54,9 @@ public class FeedbackRequestController {
                 .build();
 
         // 프로듀서 호출 (메시지 전송)
-        rabbitMqProducer.sendJob(request);
+        aiClient.sendJob(request);
 
-        return ResponseEntity.ok("저장 성공: " + savedFileName);
+        return request.getMetadata().getRequestId();
     }
 
 }

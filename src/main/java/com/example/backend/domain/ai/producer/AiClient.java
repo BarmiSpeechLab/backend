@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class RabbitMQProducer {
+public class AiClient {
     private final RabbitTemplate rabbitTemplate;
 
     // 인프라 중심 아키텍처입니다
