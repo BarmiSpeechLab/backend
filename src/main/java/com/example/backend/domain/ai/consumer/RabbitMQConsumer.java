@@ -21,7 +21,7 @@ public class RabbitMQConsumer {
      * @RabbitListener: ai.result 큐를 계속 감시합니다
      * 메시지가 들어오면 여기서 큐를 가져옵니다
      */
-    @RabbitListener(queues = "pron.result")
+    @RabbitListener(queues = "pron_result")
     public void receivePronResult(Message rawData) {
         // TODO : parameter 추후에 AnalysisResultDto 형식으로 리팩토링 예정
         String jsonString = new String(rawData.getBody(), StandardCharsets.UTF_8);
@@ -32,7 +32,7 @@ public class RabbitMQConsumer {
         // resultDto 전처리 -> DB insert
     }
 
-    @RabbitListener(queues = "inton.result")
+    @RabbitListener(queues = "inton_result")
     public void receiveIntonResult(Message rawData) {
         // TODO : parameter 추후에 AnalysisResultDto 형식으로 리팩토링 예정
         String jsonString = new String(rawData.getBody(), StandardCharsets.UTF_8);
@@ -43,7 +43,7 @@ public class RabbitMQConsumer {
         // resultDto 전처리 -> DB insert
     }
 
-    @RabbitListener(queues = "llm.result")
+    @RabbitListener(queues = "llm_result")
     public void receiveLLMResult(Message rawData) {
         // TODO : parameter 추후에 AnalysisResultDto 형식으로 리팩토링 예정
         String jsonString = new String(rawData.getBody(), StandardCharsets.UTF_8);
