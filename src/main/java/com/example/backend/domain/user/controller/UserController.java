@@ -68,4 +68,10 @@ public class UserController {
         userService.withdraw(userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success("회원 탈퇴 완료"));
     }
+    @Operation(summary = "온보딩 완료 처리 API", description = "튜토리얼 완료 후 온보딩 요청합니다.")
+    @PatchMapping("/tutorial")
+    public ResponseEntity<ApiResponse<String>> completeTutorial(@AuthenticationPrincipal UserDetails userDetails) {
+        userService.completeTutorial(userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success("온보딩 완료 처리 성공"));
+    }
 }
