@@ -43,4 +43,9 @@ public class User extends BaseTimeEntity {
             this.profileImgUrl = profileImage;
         }
     }
+
+    // 튜토리얼 완료 비즈니스 로직
+    public void finishTutorial() {
+        this.isTutorialFinished = true;
+    }
 }
