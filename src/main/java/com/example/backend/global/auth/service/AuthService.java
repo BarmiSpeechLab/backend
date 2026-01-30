@@ -30,7 +30,7 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new CustomException(ErrorCode.LOGIN_FAILED));
 
-        // 2. 비밀번호 확인 (입력한 비번 vs DB 비번)
+        // 2. 비밀번호 확인
         // matches(입력값, 암호화된값) 순서 중요!
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
@@ -56,5 +56,14 @@ public class AuthService {
                 .refreshToken(refreshToken)
                 .accessTokenExpiresIn(3600L) // 1시간 (프론트 참고용)
                 .build();
+    }
+
+    // 4. 로그아웃
+    @Transactional
+    public void logout(String email) {
+        /* TODO
+        *   저장한 리프레시 토큰을 삭제하는 기능을 구현할 예정입니다.
+        *   캐시 구현 코드가 아직 머지되지 않아서 추후 구현 예정.
+        * */
     }
 }
