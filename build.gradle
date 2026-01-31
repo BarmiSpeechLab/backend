@@ -78,6 +78,12 @@ dependencies {
     // 8. OpenVidu (화상회의)
     // ==========================================
     implementation 'io.openvidu:openvidu-java-client:2.30.0'
+
+    // ==========================================
+    // 9. 스프링 캐시
+    // ==========================================
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
 }
 
 tasks.named('test') {
