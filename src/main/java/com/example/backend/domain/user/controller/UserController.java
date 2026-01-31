@@ -49,7 +49,7 @@ public class UserController {
     @Operation(summary = "유저 정보 조회 API", description = "유저 정보를 요청합니다.")
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserResponse>> getMyInfo(@AuthenticationPrincipal UserDetails userDetails) {
-        UserResponse response = userService.getMyInfo(userDetails.getUsername());
+        UserResponse response = userService.getMyInfo(Long.parseLong(userDetails.getUsername()));
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -58,20 +58,20 @@ public class UserController {
     public ResponseEntity<ApiResponse<String>> updateMyInfo(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody UpdateRequest request) {
-        userService.updateMyInfo(userDetails.getUsername(), request);
+        userService.updateMyInfo(Long.parseLong(userDetails.getUsername()), request);
         return ResponseEntity.ok(ApiResponse.success("정보 수정 완료"));
     }
 
     @Operation(summary = "회원 탈퇴 API", description = "회원탈퇴를 요청합니다.")
     @DeleteMapping("/me")
     public ResponseEntity<ApiResponse<String>> withdraw(@AuthenticationPrincipal UserDetails userDetails) {
-        userService.withdraw(userDetails.getUsername());
+        userService.withdraw(Long.parseLong(userDetails.getUsername()));
         return ResponseEntity.ok(ApiResponse.success("회원 탈퇴 완료"));
     }
     @Operation(summary = "온보딩 완료 처리 API", description = "튜토리얼 완료 후 온보딩 요청합니다.")
     @PatchMapping("/tutorial")
     public ResponseEntity<ApiResponse<String>> completeTutorial(@AuthenticationPrincipal UserDetails userDetails) {
-        userService.completeTutorial(userDetails.getUsername());
+        userService.completeTutorial(Long.parseLong(userDetails.getUsername()));
         return ResponseEntity.ok(ApiResponse.success("온보딩 완료 처리 성공"));
     }
 }
