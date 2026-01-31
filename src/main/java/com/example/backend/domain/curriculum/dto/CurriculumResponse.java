@@ -1,0 +1,39 @@
+package com.example.backend.domain.curriculum.dto;
+
+import com.example.backend.domain.curriculum.entity.Curriculum;
+import com.example.backend.domain.curriculum.entity.CurriculumStats;
+import lombok.Builder;
+import lombok.Getter;
+
+@Getter
+@Builder
+public class CurriculumResponse {
+    private Long id;
+    private String type;
+    private String theme;
+    private String text;
+    private String meaning;
+    private String ipa;
+    private String korPronunciation;
+
+    private boolean isCompleted;
+    private Integer score;
+    private Integer tryCount;
+
+    public static CurriculumResponse of(Curriculum curriculum, CurriculumStats stats) {
+        boolean hasStats = (stats != null);
+
+        return CurriculumResponse.builder()
+                .id(curriculum.getId())
+                .type(curriculum.getType())
+                .theme(curriculum.getTheme())
+                .text(curriculum.getText())
+                .meaning(curriculum.getMeaning())
+                .ipa(curriculum.getIpa())
+                .korPronunciation(curriculum.getKorPronunciation()) // 추가된 필드 매핑
+                .isCompleted(hasStats && stats.getTryCount() > 0)
+                .score(hasStats ? stats.getScore() : 0)
+                .tryCount(hasStats ? stats.getTryCount() : 0)
+                .build();
+    }
+}

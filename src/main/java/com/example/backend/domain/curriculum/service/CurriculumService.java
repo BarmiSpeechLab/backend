@@ -1,6 +1,6 @@
 package com.example.backend.domain.curriculum.service;
 
-import com.example.backend.domain.curriculum.dto.CurriculumListResponse;
+import com.example.backend.domain.curriculum.dto.CurriculumResponse;
 import com.example.backend.domain.curriculum.entity.Curriculum;
 import com.example.backend.domain.curriculum.entity.CurriculumStats;
 import com.example.backend.domain.curriculum.repository.CurriculumRepository;
@@ -21,7 +21,7 @@ public class CurriculumService {
     private final CurriculumRepository curriculumRepository;
     private final CurriculumStatsRepository curriculumStatsRepository;
     private final UserRepository userRepository;
-    public List<CurriculumListResponse> getCurriculumList(Long id) {
+    public List<CurriculumResponse> getCurriculumList(Long id) {
         // 1. 유저 조회
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
@@ -42,7 +42,7 @@ public class CurriculumService {
                     // 이 커리큘럼에 대한 내 기록이 있나? (Map에서 조회)
                     CurriculumStats myStat = myStatsMap.get(curr.getId());
                     // DTO로 변환 (기록이 없으면 null이 넘어가서 내부적으로 0 처리)
-                    return CurriculumListResponse.of(curr, myStat);
+                    return CurriculumResponse.of(curr, myStat);
                 })
                 .collect(Collectors.toList());
     }

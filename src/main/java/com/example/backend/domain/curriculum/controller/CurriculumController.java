@@ -1,6 +1,6 @@
 package com.example.backend.domain.curriculum.controller;
 
-import com.example.backend.domain.curriculum.dto.CurriculumListResponse;
+import com.example.backend.domain.curriculum.dto.CurriculumResponse;
 import com.example.backend.domain.curriculum.service.CurriculumService;
 import com.example.backend.global.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,10 +22,10 @@ public class CurriculumController {
     private final CurriculumService curriculumService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<CurriculumListResponse>>> getCurriculumList(
+    public ResponseEntity<ApiResponse<List<CurriculumResponse>>> getCurriculumList(
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        List<CurriculumListResponse> response = curriculumService.getCurriculumList(Long.parseLong(userDetails.getUsername()));
+        List<CurriculumResponse> response = curriculumService.getCurriculumList(Long.parseLong(userDetails.getUsername()));
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
