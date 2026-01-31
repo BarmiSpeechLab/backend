@@ -42,7 +42,7 @@ public class CurriculumCache {
                 .collect(Collectors.toMap(Curriculum::getId, c -> c));
 
         long end = System.currentTimeMillis();
-        log.info("📚 커리큘럼 캐시 로드 완료! 개수: {}개, 소요시간: {}ms", allCurriculums.size(), (end - start));
+        log.info("==커리큘럼 캐시 로드 완료== 개수: {}개, 소요시간: {}ms", allCurriculums.size(), (end - start));
     }
 
     // 3. 필터링 메서드 (쿼리 대신 Java Stream 사용 -> 속도측면)
