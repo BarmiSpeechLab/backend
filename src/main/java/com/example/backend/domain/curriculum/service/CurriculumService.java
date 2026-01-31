@@ -21,6 +21,8 @@ public class CurriculumService {
     private final CurriculumRepository curriculumRepository;
     private final CurriculumStatsRepository curriculumStatsRepository;
     private final UserRepository userRepository;
+
+    // 1. 커리큘럼 리스트 조회 메서드
     public List<CurriculumResponse> getCurriculumList(Long id) {
         // 1. 유저 조회
         User user = userRepository.findById(id)
@@ -45,5 +47,24 @@ public class CurriculumService {
                     return CurriculumResponse.of(curr, myStat);
                 })
                 .collect(Collectors.toList());
+    }
+
+    // 2. 커리큘럼 상세 조회 메서드
+    public CurriculumResponse getCurriculumDetail(Long userId, Long curriculumId) {
+        // 1. 커리큘럼 조회 (없으면 404 에러)
+        Curriculum curriculum = curriculumRepository.findById(curriculumId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 커리큘럼입니다."));
+
+        // 2. 유저 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+
+        // 3. 내 기록 조회 (없을 수도 있음 -> Optional 처리)
+        CurriculumStats stats = curriculumStatsRepository
+                .findByUserAndCurriculumId(user, curriculumId)
+                .orElse(null); // 없으면 null 넘김
+
+        // 4. DTO 변환
+        return CurriculumResponse.of(curriculum, stats);
     }
 }
