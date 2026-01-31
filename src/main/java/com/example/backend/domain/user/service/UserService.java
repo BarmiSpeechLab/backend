@@ -21,16 +21,16 @@ public class UserService{
     private final PasswordEncoder passwordEncoder;
 
     // 1. 내 정보 조회
-    public UserResponse getMyInfo(String email) {
-        User user = userRepository.findByEmail(email)
+    public UserResponse getMyInfo(Long id) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         return UserResponse.from(user);
     }
 
     // 2. 내 정보 수정
     @Transactional
-    public void updateMyInfo(String email, UpdateRequest request) {
-        User user = userRepository.findByEmail(email)
+    public void updateMyInfo(Long id, UpdateRequest request) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
         user.updateProfile(request.getNickname(), request.getProfileImage());
@@ -38,8 +38,8 @@ public class UserService{
 
     // 3. 회원 탈퇴
     @Transactional
-    public void withdraw(String email) {
-        User user = userRepository.findByEmail(email)
+    public void withdraw(Long id) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
         userRepository.delete(user);
@@ -65,8 +65,8 @@ public class UserService{
 
     // 5. 튜토리얼 완료 처리
     @Transactional
-    public void completeTutorial(String email) {
-        User user = userRepository.findByEmail(email)
+    public void completeTutorial(Long id) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
 
         user.finishTutorial(); // Entity 메서드 호출 (Dirty Checking으로 자동 저장)
