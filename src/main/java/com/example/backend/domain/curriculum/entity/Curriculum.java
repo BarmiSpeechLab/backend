@@ -22,10 +22,11 @@ public class Curriculum {
     @Column(name = "curriculum_id")
     private Long id;
 
-    // "SENTENCE", "WORD", "IPA" 값을 안전하게 관리하기 위해 Enum 사용
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private CurriculumType type;
+    private String type;    // 학습 종류 (예: ipa, 단어, 문장)
+
+    @Column(nullable = false)
+    private String theme;   // 학습 테마 (예: ipa, 여행, 카페...)
 
     @Column(nullable = false)
     private String text;    // 영어 본문 (예: "Apple", "I like you")
@@ -36,11 +37,7 @@ public class Curriculum {
     private String ipa;
     private String korPronunciation;
 
-    /**
-     * DB에는 JSON 문자열로 저장되지만,
-     * 자바에서 꺼낼 때는 자동으로 ScriptInfo 객체가 됨.
-     */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "json")
-    private AnalysisData analysisData;
+    private Map<String, Object> analysisData;   // 모델이 분석한 정답데이터 저장 컬럼
 }

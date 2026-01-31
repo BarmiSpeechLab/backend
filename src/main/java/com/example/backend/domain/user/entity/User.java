@@ -4,15 +4,13 @@ import com.example.backend.global.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "USER")
+@Table(name = "USERS")
 public class User extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,4 +33,19 @@ public class User extends BaseTimeEntity {
     private Boolean isTutorialFinished = false; // 튜토리얼 완료 여부
 
     private String profileImgUrl;   // 프로필 이미지 url
+
+    // 회원 정보 수정 비즈니스 로직
+    public void updateProfile(String nickname, String profileImage) {
+        if (nickname != null && !nickname.isBlank()) {
+            this.nickname = nickname;
+        }
+        if (profileImage != null && !profileImage.isBlank()) {
+            this.profileImgUrl = profileImage;
+        }
+    }
+
+    // 튜토리얼 완료 비즈니스 로직
+    public void finishTutorial() {
+        this.isTutorialFinished = true;
+    }
 }
