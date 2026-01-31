@@ -7,6 +7,8 @@ import com.example.backend.domain.curriculum.repository.CurriculumRepository;
 import com.example.backend.domain.curriculum.repository.CurriculumStatsRepository;
 import com.example.backend.domain.user.entity.User;
 import com.example.backend.domain.user.repository.UserRepository;
+import com.example.backend.global.exception.CustomException;
+import com.example.backend.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +20,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class CurriculumService {
-    private final CurriculumRepository curriculumRepository;
+    private final CurriculumCache curriculumCache;
     private final CurriculumStatsRepository curriculumStatsRepository;
     private final UserRepository userRepository;
 
@@ -27,8 +29,8 @@ public class CurriculumService {
         // 1. 유저 조회
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
-        // 2. 전체 커리큘럼 조회
-        List<Curriculum> allCurriculums = curriculumRepository.findAllByTypeAndThemeOrderByIdAsc(type, theme);
+        // 2. 전체 커리큘럼 조회 (DB가 아닌 메모리 조회)
+        List<Curriculum> allCurriculums = curriculumCache.getCurriculumsByCondition(type, theme);
 
         // 3. 내 기록 조회 (Map으로 변환하여 검색 속도 O(1)로 최적화)
         // Key: 커리큘럼 ID, Value: 기록객체
@@ -51,10 +53,11 @@ public class CurriculumService {
 
     // 2. 커리큘럼 상세 조회 메서드
     public CurriculumResponse getCurriculumDetail(Long userId, Long curriculumId) {
-        // 1. 커리큘럼 조회 (없으면 404 에러)
-        Curriculum curriculum = curriculumRepository.findById(curriculumId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 커리큘럼입니다."));
-
+        // 1. 커리큘럼 조회(메모리)
+        Curriculum curriculum = curriculumCache.getCurriculum(curriculumId);
+        if (curriculum == null) {
+            throw new CustomException(ErrorCode.EXPRESSION_NOT_FOUND);
+        }
         // 2. 유저 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));

@@ -32,7 +32,7 @@ public class CurriculumController {
             @PathVariable String theme
     ) {
 
-        List<CurriculumResponse> response = curriculumService.getCurriculumList(Long.parseLong(userDetails.getUsername()));
+        List<CurriculumResponse> response = curriculumService.getCurriculumList(Long.parseLong(userDetails.getUsername()), type, theme);
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
