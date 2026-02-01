@@ -12,6 +12,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Path;
+
 @Tag(name = "AI 분석 API", description = "RabbitMQ 테스트용 API")
 @RestController
 @RequestMapping("/api/analysis")
@@ -27,9 +29,10 @@ public class AnalysisController {
     )
     public ResponseEntity<String> requestAnalysis(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestPart("file") MultipartFile file
+            @RequestPart("file") MultipartFile file,
+            @RequestParam Long curriculumId
     ) {
-        String taskId = analysisService.requestAnalysis(file);
+        String taskId = analysisService.requestAnalysis(file, curriculumId);
         return ResponseEntity.ok("저장 성공: " + taskId);
     }
 

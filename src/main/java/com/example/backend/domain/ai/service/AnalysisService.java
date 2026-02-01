@@ -3,6 +3,10 @@ package com.example.backend.domain.ai.service;
 import com.example.backend.domain.ai.dto.AnalysisRequestDto;
 import com.example.backend.domain.ai.dto.IntegratedAnalysisResult;
 import com.example.backend.domain.ai.producer.AiClient;
+import com.example.backend.domain.curriculum.entity.Curriculum;
+import com.example.backend.domain.curriculum.repository.CurriculumRepository;
+import com.example.backend.global.exception.CustomException;
+import com.example.backend.global.exception.ErrorCode;
 import com.example.backend.global.infra.file.FileService;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
@@ -21,21 +25,27 @@ public class AnalysisService {
     private final AiClient aiClient;
     private final FileService fileService;
     private final CacheManager cacheManager;
+    private final CurriculumRepository curriculumRepository;
 
     // 분석 요청 서비스 메서드
     // request -> AI
-    public String requestAnalysis(MultipartFile file) {
+    public String requestAnalysis(MultipartFile file, Long curriculumId) {
         // 파일저장
         String savedFileName = fileService.saveFile(file);
+        // id로 커리큘럼 찾고 npe 처리
+        Curriculum curriculum = curriculumRepository.findById(curriculumId)
+                .orElseThrow(()->new CustomException(ErrorCode.EXPRESSION_NOT_FOUND));
         // task id 생성
         String taskId = "REQ_" + UUID.randomUUID().toString().substring(0, 8);
-        // 3. 요청 데이터 조립 (Map 사용)
+        // 요청 데이터 조립 (Map 사용)
         Map<String, Object> request = new HashMap<>();
         request.put("taskId", taskId);             // 식별자
         request.put("filePath", savedFileName);    // 파일 경로
-        request.put("analysisRequest", "I like to dance");  // 분석할 문장 (일단 하드코딩)
+        request.put("analysisRequest", curriculum.getCData());  // 정답 데이터
+
         // 프로듀서 호출 (메시지 전송)
         aiClient.sendJob(request);
+
         return taskId;
     }
 

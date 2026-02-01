@@ -37,11 +37,7 @@ public class Curriculum {
     private String ipa;
     private String korPronunciation;
 
-    /**
-     * DB에는 JSON 문자열로 저장되지만,
-     * 자바에서 꺼낼 때는 자동으로 ScriptInfo 객체가 됨.
-     */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "json")
-    private Map<String, Object> analysisData;   // 모델이 분석한 정답데이터 저장 컬럼
+    private Map<String, Object> cData;   // 모델이 분석한 정답데이터 저장 컬럼
 }
