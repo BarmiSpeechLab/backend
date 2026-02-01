@@ -1,5 +1,6 @@
-package com.example.backend.domain.user.entity;
+package com.example.backend.domain.report.entity;
 
+import com.example.backend.domain.user.entity.User;
 import com.example.backend.global.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -39,7 +40,7 @@ public class DailyStudyLog extends BaseTimeEntity {
     @Column(nullable = false)
     private Integer feedbackCount; // AI 피드백 요청 횟수 (학습량)
 
-    // 생성자 (로그인 시 호출 - 카운트는 0부터 시작하거나 1로 시작)
+    // 생성자 (로그인 시 호출 - 카운트는 0부터 시작)
     @Builder
     public DailyStudyLog(User user, LocalDate date) {
         this.user = user;
