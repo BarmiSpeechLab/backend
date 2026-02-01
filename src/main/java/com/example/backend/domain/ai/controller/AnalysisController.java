@@ -14,7 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "AI 분석 API", description = "RabbitMQ 테스트용 API")
 @RestController
-@RequestMapping("/api/feedback")
+@RequestMapping("/api/analysis")
 @RequiredArgsConstructor
 public class AnalysisController {
 
