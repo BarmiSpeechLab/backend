@@ -25,7 +25,7 @@ import java.time.LocalDateTime;
                 )
         }
 )
-public class DailyStudyLog extends BaseTimeEntity {
+public class DailyStudyLog {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
