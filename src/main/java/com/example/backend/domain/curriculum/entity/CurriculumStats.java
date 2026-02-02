@@ -30,4 +30,8 @@ public class CurriculumStats {
 
     @Column(nullable = false)
     private Integer score;
+
+    public void updateScore(int score) {
+        this.score = score;
+    }
 }
