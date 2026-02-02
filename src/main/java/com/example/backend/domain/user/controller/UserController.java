@@ -29,7 +29,7 @@ public class UserController {
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<String>> signup(@RequestBody SignUpRequest signUpRequest) {
         userService.createUser(signUpRequest);
-        return ResponseEntity.ok(ApiResponse.success("User registered successfully"));
+        return ResponseEntity.ok(ApiResponse.success("회원가입 성공"));
     }
 
     @Operation(summary = "로그인 API", description = "로그인을 요청합니다.")
@@ -42,7 +42,7 @@ public class UserController {
     @Operation(summary = "로그아웃 API", description = "리프레시 토큰 미구현으로 인해 아직 개발중인 API입니다.")
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<String>> logout(@AuthenticationPrincipal UserDetails userDetails) {
-        authService.logout(userDetails.getUsername()); // Username이 email이라고 가정
+        authService.logout(Long.parseLong(userDetails.getUsername()));
         return ResponseEntity.ok(ApiResponse.success("로그아웃 성공"));
     }
 
@@ -54,7 +54,7 @@ public class UserController {
     }
 
     @Operation(summary = "유저 정보 수정 API", description = "유저의 정보 수정을 요청합니다.")
-    @PatchMapping("/me")
+    @PutMapping("/me")
     public ResponseEntity<ApiResponse<String>> updateMyInfo(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody UpdateRequest request) {
@@ -69,7 +69,7 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success("회원 탈퇴 완료"));
     }
     @Operation(summary = "온보딩 완료 처리 API", description = "튜토리얼 완료 후 온보딩 요청합니다.")
-    @PatchMapping("/tutorial")
+    @PutMapping("/tutorial")
     public ResponseEntity<ApiResponse<String>> completeTutorial(@AuthenticationPrincipal UserDetails userDetails) {
         userService.completeTutorial(Long.parseLong(userDetails.getUsername()));
         return ResponseEntity.ok(ApiResponse.success("온보딩 완료 처리 성공"));

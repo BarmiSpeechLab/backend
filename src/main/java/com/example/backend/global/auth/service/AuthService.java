@@ -60,7 +60,7 @@ public class AuthService {
 
     // 4. 로그아웃
     @Transactional
-    public void logout(String email) {
+    public void logout(Long id) {
         /* TODO
         *   저장한 리프레시 토큰을 삭제하는 기능을 구현할 예정입니다.
         *   캐시 구현 코드가 아직 머지되지 않아서 추후 구현 예정.
