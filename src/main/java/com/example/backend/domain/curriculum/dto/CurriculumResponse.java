@@ -5,13 +5,15 @@ import com.example.backend.domain.curriculum.entity.CurriculumStats;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.Map;
+
 @Getter
 @Builder
 public class CurriculumResponse {
     private Long id;
     private String type;
     private String theme;
-    private String text;
+    private Map<String, Object> text;
     private String meaning;
     private String ipa;
     private String korPronunciation;
