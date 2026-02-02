@@ -114,8 +114,7 @@ public class AnalysisService {
         // DB 로직은 세 개 다 있어야 실행된다
         if (isAnalysisComplete(result)){
             User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-    //        Curriculum curriculum = curricndById(userId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
-            Curriculum curriculum = Curriculum.builder().id(1L).build();
+            Curriculum curriculum = curriculumRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.EXPRESSION_NOT_FOUND));
 
             // 3. DB 업데이트 (점수, 로그 등)
             saveToDatabase(user, result, curriculum);
@@ -128,8 +127,8 @@ public class AnalysisService {
     }
     private boolean isAnalysisComplete(IntegratedAnalysisResult result) {
         return result.getPronunciation() != null
-                && result.getIntonations() != null   // ★ 여기랑
-                && result.getLlmFeedback() != null;  // ★ 여기가 null이면 무조건 false
+                && result.getIntonations() != null
+                && result.getLlmFeedback() != null;
     }
     // DB 저장 로직 분리
     private void saveToDatabase(User user, IntegratedAnalysisResult result, Curriculum curriculum) {
@@ -138,26 +137,19 @@ public class AnalysisService {
         // TODO : String으로 넘어오는 경우 파싱 필요: Integer.parseInt(String.valueOf(...))\
 
         // 2. CurriculumStats (커리큘럼별 최고기록/완료여부) 업데이트
-//        CurriculumStats stats = curriculumStatsRepository.findByUserAndCurriculumId(user, curriculum.getId())
-//                .orElseGet(() -> CurriculumStats
-//                        .builder()
-//                        .curriculum(curriculum)
-//                        .user(user)
-//                        .build());
-//        stats.updateScore(score);
-//        curriculumStatsRepository.save(stats);
+        CurriculumStats stats = curriculumStatsRepository.findByUserAndCurriculumId(user, curriculum.getId())
+                .orElseGet(() -> CurriculumStats
+                        .builder()
+                        .curriculum(curriculum)
+                        .user(user)
+                        .build());
+        stats.updateScore(score);
+        curriculumStatsRepository.save(stats);
 
         // 3. DailyStudyLog (일일 학습량) 업데이트
-//        DailyStudyLog todayLog = dailyStudyLogRepository.findByUserAndDate(user, LocalDate.now())
-//                .orElseGet(() -> new DailyStudyLog(user, LocalDate.now()));
-//        todayLog.increaseFeedbackCount();
-//        dailyStudyLogRepository.save(todayLog);
-//
-//        log.info("=======stats======");
-//        log.info(stats.toString());
-//        log.info("=======log======");
-//        log.info(todayLog.toString());
-        log.info("DB save 메서드 실행");
+        DailyStudyLog todayLog = dailyStudyLogRepository.findByUserAndDate(user, LocalDate.now())
+                .orElseGet(() -> new DailyStudyLog(user, LocalDate.now()));
+        todayLog.increaseFeedbackCount();
+        dailyStudyLogRepository.save(todayLog);
     }
-
 }
