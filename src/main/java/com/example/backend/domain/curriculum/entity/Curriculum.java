@@ -28,7 +28,7 @@ public class Curriculum {
     @Column(nullable = false)
     private String theme;   // 학습 테마 (예: ipa, 여행, 카페...)
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String text;    // 영어 본문 (예: "Apple", "I like you")
 
     private String meaning; // 한글 뜻 (예: "사과", "나는 너를 좋아해")
