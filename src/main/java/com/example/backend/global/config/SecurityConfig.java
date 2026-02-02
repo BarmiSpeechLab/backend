@@ -76,10 +76,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 1. 리액트(3000)와 도커 내부 통신 허용
+        // 1. 통신 허용
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:3000",
-                "http://127.0.0.1:3000"
+                "http://127.0.0.1:3000",
+                "https://i14b104.p.ssafy.io"
         ));
 
         // 2. 모든 HTTP 메서드 허용

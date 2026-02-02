@@ -24,7 +24,7 @@ public class ReportController {
     private final ReportService reportService;
 
     @Operation(summary = "나의 전체 통계 조회 API",description = "특정 유저의 전체 발음학습 통계 데이터를 응답합니다.")
-    @GetMapping("/stats")
+    @GetMapping("/my-stats")
     public ResponseEntity<ApiResponse<MyReportResponse>> getMyStats(
             Long userId) {
 

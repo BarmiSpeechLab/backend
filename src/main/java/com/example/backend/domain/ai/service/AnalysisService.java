@@ -3,6 +3,16 @@ package com.example.backend.domain.ai.service;
 import com.example.backend.domain.ai.dto.AnalysisRequestDto;
 import com.example.backend.domain.ai.dto.IntegratedAnalysisResult;
 import com.example.backend.domain.ai.producer.AiClient;
+import com.example.backend.domain.curriculum.entity.Curriculum;
+import com.example.backend.domain.curriculum.entity.CurriculumStats;
+import com.example.backend.domain.curriculum.repository.CurriculumRepository;
+import com.example.backend.domain.curriculum.repository.CurriculumStatsRepository;
+import com.example.backend.domain.report.entity.DailyStudyLog;
+import com.example.backend.domain.report.repository.DailyStudyLogRepository;
+import com.example.backend.domain.user.entity.User;
+import com.example.backend.domain.user.repository.UserRepository;
+import com.example.backend.global.exception.CustomException;
+import com.example.backend.global.exception.ErrorCode;
 import com.example.backend.global.infra.file.FileService;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +21,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -21,21 +32,31 @@ public class AnalysisService {
     private final AiClient aiClient;
     private final FileService fileService;
     private final CacheManager cacheManager;
+    private final CurriculumRepository curriculumRepository;
+    private final CurriculumStatsRepository curriculumStatsRepository;
+    private final DailyStudyLogRepository dailyStudyLogRepository;
+    private final UserRepository userRepository;
 
     // 분석 요청 서비스 메서드
     // request -> AI
-    public String requestAnalysis(MultipartFile file) {
+    public String requestAnalysis(MultipartFile file, Long curriculumId) {
         // 파일저장
         String savedFileName = fileService.saveFile(file);
+        // id로 커리큘럼 찾고 npe 처리
+        Curriculum curriculum = curriculumRepository.findById(curriculumId)
+                .orElseThrow(()->new CustomException(ErrorCode.EXPRESSION_NOT_FOUND));
         // task id 생성
         String taskId = "REQ_" + UUID.randomUUID().toString().substring(0, 8);
-        // 3. 요청 데이터 조립 (Map 사용)
+        // 요청 데이터 조립 (Map 사용)
         Map<String, Object> request = new HashMap<>();
         request.put("taskId", taskId);             // 식별자
         request.put("filePath", savedFileName);    // 파일 경로
-        request.put("analysisRequest", "I like to dance");  // 분석할 문장 (일단 하드코딩)
+        request.put("type", curriculum.getType());
+        request.put("analysisRequest", curriculum.getCData());  // 정답 데이터
+
         // 프로듀서 호출 (메시지 전송)
         aiClient.sendJob(request);
+
         return taskId;
     }
 
@@ -75,9 +96,68 @@ public class AnalysisService {
         log.info("데이터 병합 완료 [Type: {}] TaskId: {}", type, taskId);
     }
     // 조회 메서드
-    public IntegratedAnalysisResult getResult(String taskId) {
-        var cache = cacheManager.getCache("analysis_results");
-        return (cache != null) ? cache.get(taskId, IntegratedAnalysisResult.class) : null;
+    public IntegratedAnalysisResult getResult(Long userId, String taskId, Long curriculumId) {
+        // 1. 캐시 가져오기
+        org.springframework.cache.Cache cache = cacheManager.getCache("analysis_results");
+        if (cache == null) return null;
+
+        // 2. TaskId로 데이터 조회
+        // (CacheWrapper에서 실제 값 꺼내기)
+        IntegratedAnalysisResult result = cache.get(taskId, IntegratedAnalysisResult.class);
+
+        // 데이터가 없으면 null 반환
+        if (result == null) {
+            return null;
+        }
+
+        // 분석 완료 (덮어쓰기해서 하나씩 )
+        // DB 로직은 세 개 다 있어야 실행된다
+        if (isAnalysisComplete(result)){
+            User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+    //        Curriculum curriculum = curricndById(userId).orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+            Curriculum curriculum = Curriculum.builder().id(1L).build();
+
+            // 3. DB 업데이트 (점수, 로그 등)
+            saveToDatabase(user, result, curriculum);
+
+            // 4. 캐시 삭제 (이미 DB에 저장했으므로 메모리 확보 + 중복 저장 방지)
+            cache.evict(taskId);
+
+        }
+        return result;
+    }
+    private boolean isAnalysisComplete(IntegratedAnalysisResult result) {
+        return result.getPronunciation() != null
+                && result.getIntonations() != null   // ★ 여기랑
+                && result.getLlmFeedback() != null;  // ★ 여기가 null이면 무조건 false
+    }
+    // DB 저장 로직 분리
+    private void saveToDatabase(User user, IntegratedAnalysisResult result, Curriculum curriculum) {
+        // 1. 점수 추출 (예: 발음 점수가 메인 점수라고 가정)
+        int score = (int) result.getPronunciation().getOrDefault("score", 0);
+        // TODO : String으로 넘어오는 경우 파싱 필요: Integer.parseInt(String.valueOf(...))\
+
+        // 2. CurriculumStats (커리큘럼별 최고기록/완료여부) 업데이트
+//        CurriculumStats stats = curriculumStatsRepository.findByUserAndCurriculumId(user, curriculum.getId())
+//                .orElseGet(() -> CurriculumStats
+//                        .builder()
+//                        .curriculum(curriculum)
+//                        .user(user)
+//                        .build());
+//        stats.updateScore(score);
+//        curriculumStatsRepository.save(stats);
+
+        // 3. DailyStudyLog (일일 학습량) 업데이트
+//        DailyStudyLog todayLog = dailyStudyLogRepository.findByUserAndDate(user, LocalDate.now())
+//                .orElseGet(() -> new DailyStudyLog(user, LocalDate.now()));
+//        todayLog.increaseFeedbackCount();
+//        dailyStudyLogRepository.save(todayLog);
+//
+//        log.info("=======stats======");
+//        log.info(stats.toString());
+//        log.info("=======log======");
+//        log.info(todayLog.toString());
+        log.info("DB save 메서드 실행");
     }
 
 }

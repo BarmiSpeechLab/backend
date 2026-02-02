@@ -60,6 +60,7 @@ public class UserService{
 
         request.setPassword(passwordEncoder.encode(request.getPassword()));
         User user = request.toEntity();
+        user.setIsTutorialFinished(false);
         return userRepository.save(user);
     }
 

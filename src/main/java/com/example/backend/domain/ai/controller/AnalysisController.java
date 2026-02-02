@@ -12,9 +12,11 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Path;
+
 @Tag(name = "AI 분석 API", description = "RabbitMQ 테스트용 API")
 @RestController
-@RequestMapping("/api/feedback")
+@RequestMapping("/api/analysis")
 @RequiredArgsConstructor
 public class AnalysisController {
 
@@ -27,20 +29,27 @@ public class AnalysisController {
     )
     public ResponseEntity<String> requestAnalysis(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestPart("file") MultipartFile file
+            @RequestPart("file") MultipartFile file,
+            @RequestParam Long curriculumId
     ) {
-        String taskId = analysisService.requestAnalysis(file);
+        String taskId = analysisService.requestAnalysis(file, curriculumId);
         return ResponseEntity.ok("저장 성공: " + taskId);
     }
 
     @Operation(summary = "음성데이터 피드백 결과 요청(Polling)", description = "음성 파일에 대한 AI 분석 결과를 요청합니다")
-    @GetMapping("/{taskId}")
+    @GetMapping("/{curriculumId}/{taskId}")
     public ResponseEntity<String> requestResult(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @PathVariable String taskId
+            @PathVariable String taskId,
+            @PathVariable Long curriculumId
     ) {
         // 캐시 조회
-        IntegratedAnalysisResult result = analysisService.getResult(taskId);
+        IntegratedAnalysisResult result = analysisService.getResult(Long.parseLong(userDetails.getUsername()), taskId, curriculumId);
+//        // 서비스 메서드 호출 (여기서 모든 DB 업데이트가 일어남)
+//        if (result == null) {
+//            // 1. 아직 분석 중인 경우: 202 Accepted 또는 200 OK + "처리중" 메시지
+//            return ResponseEntity.ok().body("PROCESSING");
+//        }
         /*
           TODO
             1.taskId로 캐시에 저장된 전체 피드백 결과를 가져오기
@@ -48,7 +57,7 @@ public class AnalysisController {
             3.user log(방문기록) 테이블 업데이트
             4.전체 결과 반환
         */
-        return ResponseEntity.ok("저장 성공: " + result);
+        return ResponseEntity.ok("현재 데이터 : " + result);
     }
 
 }
