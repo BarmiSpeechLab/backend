@@ -5,6 +5,8 @@ import com.example.backend.domain.meeting.dto.SessionResponse;
 import com.example.backend.domain.meeting.service.MeetingService;
 import com.example.backend.domain.meeting.dto.MeetingTokenResponse;
 import com.example.backend.global.dto.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,11 +15,12 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/meetings")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*") // 프론트엔드 접속 허용
+@Tag(name = "튜터링 API", description = "튜터링 관련 API입니다.")
 public class MeetingController {
     
     private final MeetingService meetingService;
 
-    // 방 생성 API
+    @Operation(summary = "튜터링 방 생성 API", description = "튜터와 학생의 튜터링 미팅룸을 생성합니다.")
     @PostMapping("/sessions")
     public ResponseEntity<ApiResponse<SessionResponse>> initializeSession(
             @RequestBody(required = false) SessionCreateRequest request) {
@@ -43,6 +46,7 @@ public class MeetingController {
     }    
 
     // 토큰 발급 API
+    @Operation(summary = "토큰 발급 API", description = "토큰을 발급하고 응답합니다.")
     @PostMapping("/sessions/{sessionId}/connections")
     public ResponseEntity<ApiResponse<MeetingTokenResponse>> createConnection(
             @PathVariable("sessionId") String sessionId) {
