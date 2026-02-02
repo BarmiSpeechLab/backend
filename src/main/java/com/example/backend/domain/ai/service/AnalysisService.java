@@ -51,6 +51,7 @@ public class AnalysisService {
         Map<String, Object> request = new HashMap<>();
         request.put("taskId", taskId);             // 식별자
         request.put("filePath", savedFileName);    // 파일 경로
+        request.put("type", curriculum.getType());
         request.put("analysisRequest", curriculum.getCData());  // 정답 데이터
 
         // 프로듀서 호출 (메시지 전송)
