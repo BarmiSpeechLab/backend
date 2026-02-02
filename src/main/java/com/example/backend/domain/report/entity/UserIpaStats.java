@@ -1,4 +1,4 @@
-package com.example.backend.domain.report;
+package com.example.backend.domain.report.entity;
 
 import com.example.backend.domain.curriculum.entity.Ipa;
 import com.example.backend.domain.user.entity.User;
