@@ -56,7 +56,7 @@ public class AnalysisService {
         Object analysisData = cDataMap.get("analysis");
 
         Map<String, Object> request = new HashMap<>();
-        request.put("file", savedFileName);
+        request.put("file_path", savedFileName);
         request.put("taskId", taskId);
         request.put("type", curriculum.getType());
 
