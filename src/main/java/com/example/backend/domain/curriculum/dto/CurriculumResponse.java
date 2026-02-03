@@ -17,7 +17,7 @@ public class CurriculumResponse {
     private String meaning;
     private String ipa;
     private String korPronunciation;
-
+    private Map<String, Object> inton;
     private boolean isCompleted;
     private Integer score;
     private Integer tryCount;
@@ -32,7 +32,8 @@ public class CurriculumResponse {
                 .text(curriculum.getText())
                 .meaning(curriculum.getMeaning())
                 .ipa(curriculum.getIpa())
-                .korPronunciation(curriculum.getKorPronunciation()) // 추가된 필드 매핑
+                .korPronunciation(curriculum.getKorPronunciation())
+                .inton(curriculum.getIntonData())
                 .isCompleted(hasStats && stats.getTryCount() > 0)
                 .score(hasStats ? stats.getScore() : 0)
                 .tryCount(hasStats ? stats.getTryCount() : 0)

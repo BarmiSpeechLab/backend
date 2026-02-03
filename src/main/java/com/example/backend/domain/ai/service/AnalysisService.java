@@ -111,7 +111,6 @@ public class AnalysisService {
         // 분석 완료 (덮어쓰기해서 하나씩 )
         // DB 로직은 세 개 다 있어야 실행된다
         if (isAnalysisComplete(result)){
-
             User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
             Curriculum curriculum = curriculumRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.EXPRESSION_NOT_FOUND));
 
@@ -151,4 +150,5 @@ public class AnalysisService {
         todayLog.increaseFeedbackCount();
         dailyStudyLogRepository.save(todayLog);
     }
+
 }
