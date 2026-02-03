@@ -1,5 +1,6 @@
 package com.example.backend.domain.ai.service;
 
+import com.example.backend.domain.ai.dto.AnalysisRequestDto;
 import com.example.backend.domain.ai.dto.IntegratedAnalysisResult;
 import com.example.backend.domain.ai.producer.AiClient;
 import com.example.backend.domain.curriculum.entity.Curriculum;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -111,7 +113,6 @@ public class AnalysisService {
         // 분석 완료 (덮어쓰기해서 하나씩 )
         // DB 로직은 세 개 다 있어야 실행된다
         if (isAnalysisComplete(result)){
-
             User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
             Curriculum curriculum = curriculumRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.EXPRESSION_NOT_FOUND));
 
