@@ -8,6 +8,7 @@ import com.example.backend.global.auth.dto.LoginRequest;
 import com.example.backend.global.auth.dto.TokenResponse;
 import com.example.backend.global.auth.service.AuthService;
 import com.example.backend.global.dto.ApiResponse;
+import com.example.backend.global.userdetails.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -41,37 +42,37 @@ public class UserController {
 
     @Operation(summary = "로그아웃 API", description = "리프레시 토큰 미구현으로 인해 아직 개발중인 API입니다.")
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<String>> logout(@AuthenticationPrincipal UserDetails userDetails) {
-        authService.logout(Long.parseLong(userDetails.getUsername()));
+    public ResponseEntity<ApiResponse<String>> logout(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        authService.logout(userDetails.getUserId());
         return ResponseEntity.ok(ApiResponse.success("로그아웃 성공"));
     }
 
     @Operation(summary = "유저 정보 조회 API", description = "유저 정보를 요청합니다.")
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<UserResponse>> getMyInfo(@AuthenticationPrincipal UserDetails userDetails) {
-        UserResponse response = userService.getMyInfo(Long.parseLong(userDetails.getUsername()));
+    public ResponseEntity<ApiResponse<UserResponse>> getMyInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        UserResponse response = userService.getMyInfo(userDetails.getUserId());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @Operation(summary = "유저 정보 수정 API", description = "유저의 정보 수정을 요청합니다.")
     @PutMapping("/me")
     public ResponseEntity<ApiResponse<String>> updateMyInfo(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody UpdateRequest request) {
-        userService.updateMyInfo(Long.parseLong(userDetails.getUsername()), request);
+        userService.updateMyInfo(userDetails.getUserId(), request);
         return ResponseEntity.ok(ApiResponse.success("정보 수정 완료"));
     }
 
     @Operation(summary = "회원 탈퇴 API", description = "회원탈퇴를 요청합니다.")
     @DeleteMapping("/me")
-    public ResponseEntity<ApiResponse<String>> withdraw(@AuthenticationPrincipal UserDetails userDetails) {
-        userService.withdraw(Long.parseLong(userDetails.getUsername()));
+    public ResponseEntity<ApiResponse<String>> withdraw(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        userService.withdraw(userDetails.getUserId());
         return ResponseEntity.ok(ApiResponse.success("회원 탈퇴 완료"));
     }
     @Operation(summary = "온보딩 완료 처리 API", description = "튜토리얼 완료 후 온보딩 요청합니다.")
     @PutMapping("/tutorial")
-    public ResponseEntity<ApiResponse<String>> completeTutorial(@AuthenticationPrincipal UserDetails userDetails) {
-        userService.completeTutorial(Long.parseLong(userDetails.getUsername()));
+    public ResponseEntity<ApiResponse<String>> completeTutorial(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        userService.completeTutorial(userDetails.getUserId());
         return ResponseEntity.ok(ApiResponse.success("온보딩 완료 처리 성공"));
     }
 }

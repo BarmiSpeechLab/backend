@@ -43,7 +43,7 @@ public class ReportController {
             @PathVariable int month) {
 
         return ResponseEntity.ok(ApiResponse.success(
-                reportService.getCalendarLogs(Long.parseLong(userDetails.getUsername()), year, month)
+                reportService.getCalendarLogs(userDetails.getUserId(), year, month)
         ));
     }
 
@@ -53,7 +53,7 @@ public class ReportController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         return ResponseEntity.ok(ApiResponse.success(
-                reportService.getIpaAnalysis(Long.parseLong(userDetails.getUsername()))
+                reportService.getIpaAnalysis(userDetails.getUserId())
         ));
     }
 }

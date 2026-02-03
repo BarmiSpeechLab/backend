@@ -44,7 +44,7 @@ public class AnalysisController {
             @PathVariable Long curriculumId
     ) {
         // 캐시 조회
-        IntegratedAnalysisResult result = analysisService.getResult(Long.parseLong(userDetails.getUsername()), taskId, curriculumId);
+        IntegratedAnalysisResult result = analysisService.getResult(userDetails.getUserId(), taskId, curriculumId);
 //        // 서비스 메서드 호출 (여기서 모든 DB 업데이트가 일어남)
 //        if (result == null) {
 //            // 1. 아직 분석 중인 경우: 202 Accepted 또는 200 OK + "처리중" 메시지

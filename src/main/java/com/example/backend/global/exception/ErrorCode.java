@@ -63,9 +63,12 @@ public enum ErrorCode {
     // 📹 Tutoring & WebRTC (화상 튜터링)
     // =================================================================
     ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, 40420, "해당 튜터링 방을 찾을 수 없습니다."),
+    MEETING_NOT_FOUND(HttpStatus.NOT_FOUND,40430, "해당 수업을 찾을 수 없습니다."),
     ROOM_IS_FULL(HttpStatus.CONFLICT, 40920, "방의 정원이 초과되었습니다."),
     ALREADY_IN_ROOM(HttpStatus.CONFLICT, 40921, "이미 방에 참여 중입니다."),
     ROOM_CLOSED(HttpStatus.BAD_REQUEST, 40020, "이미 종료된 튜터링 방입니다."),
+    OPENVIDU_HTTP_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, 50000,"화상 회의 서버 연결에 실패했습니다."),
+    OPENVIDU_CLIENT_ERROR(HttpStatus.INTERNAL_SERVER_ERROR,50010, "화상 회의 클라이언트 설정 오류입니다."),
 
     // =================================================================
     // 🤖 AI Integration (FastAPI 연동)
