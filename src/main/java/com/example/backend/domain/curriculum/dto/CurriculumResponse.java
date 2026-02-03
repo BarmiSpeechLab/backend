@@ -5,6 +5,7 @@ import com.example.backend.domain.curriculum.entity.CurriculumStats;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -17,7 +18,7 @@ public class CurriculumResponse {
     private String meaning;
     private String ipa;
     private String korPronunciation;
-    private Map<String, Object> inton;
+    private List<Map<String, Object>> inton;
     private boolean isCompleted;
     private Integer score;
     private Integer tryCount;
