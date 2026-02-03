@@ -68,7 +68,7 @@ public class UserService{
     @Transactional
     public void completeTutorial(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         user.finishTutorial(); // Entity 메서드 호출 (Dirty Checking으로 자동 저장)
     }
