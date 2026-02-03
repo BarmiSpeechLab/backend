@@ -16,7 +16,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AiListener {
 
-    // private final FeedbackRepository feedbackRepository; // 나중에 DB 업데이트할 때 필요
     private final AnalysisService analysisService;
 
     /**
@@ -40,6 +39,12 @@ public class AiListener {
     public void receiveLLMResult(Map<String, Object> rawData) {
         log.info("[LLM Feedback 데이터 수신] 원본 데이터: {}", rawData);
         analysisService.saveResult((String) rawData.get("taskId"), "LLM", rawData);
+    }
+
+    @RabbitListener(queues = "error_result")
+    public void receiveErrorResult(Map<String, Object> rawData) {
+        log.info("[Error 데이터 수신] 원본 데이터: {}", rawData);
+        analysisService.saveResult((String) rawData.get("taskId"), "ERROR", rawData);
     }
 
 }
