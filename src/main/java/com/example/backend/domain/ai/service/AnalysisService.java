@@ -113,26 +113,45 @@ public class AnalysisService {
     public IntegratedAnalysisResult getResult(Long userId, String taskId, Long curriculumId) {
         // 1. 캐시 가져오기
         org.springframework.cache.Cache cache = cacheManager.getCache("analysis_results");
-        if (cache == null) return null;
+        if (cache == null) {
+            // 캐시 시스템 문제 시 PROCESSING 상태 반환
+            return createProcessingResult(taskId);
+        }
 
         // 2. TaskId로 데이터 조회
-        // (CacheWrapper에서 실제 값 꺼내기)
         IntegratedAnalysisResult result = cache.get(taskId, IntegratedAnalysisResult.class);
-        if (result == null) return null;            // result가 null일때 바로 null 반환
-        if ("ERROR".equals(result.getStatus())) {   // status가 error일 때 바로 error 반환
-            cache.evict(taskId); // 캐시 삭제
+        if (result == null) {
+            // 아직 분석이 시작되지 않았거나 진행 중
+            return createProcessingResult(taskId);
+        }
+        
+        if ("ERROR".equals(result.getStatus())) {
+            // 에러 발생 시 캐시 삭제 후 에러 결과 반환
+            cache.evict(taskId);
             return result;
         }
-        // 분석 완료 (덮어쓰기해서 하나씩 )
-        // DB 로직은 세 개 다 있어야 실행된다
+        
+        // 분석 완료 체크 (세 가지 결과가 모두 도착했는지)
         if (isAnalysisComplete(result)){
             User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
             Curriculum curriculum = curriculumRepository.findById(curriculumId).orElseThrow(() -> new CustomException(ErrorCode.EXPRESSION_NOT_FOUND));
+            
             // DB 업데이트
             saveToDatabase(user, result, curriculum);
             cache.evict(taskId);    // DB 저장 후 캐시 삭제
             result.setStatus("SUCCESS"); // 클라이언트에게 최종 완료 알림
         }
+        
+        return result;
+    }
+    
+    /**
+     * PROCESSING 상태의 빈 결과 객체 생성
+     */
+    private IntegratedAnalysisResult createProcessingResult(String taskId) {
+        IntegratedAnalysisResult result = new IntegratedAnalysisResult();
+        result.setTaskId(taskId);
+        result.setStatus("PROCESSING");
         return result;
     }
     private boolean isAnalysisComplete(IntegratedAnalysisResult result) {
