@@ -27,9 +27,9 @@ public class MeetingController {
     private final MeetingService meetingService;
 
     // 1. 튜터가 수업 시간대 생성
-    @PostMapping("/meetings")
+    @PostMapping("")
     @PreAuthorize("hasRole('TUTOR')")   // api 요청 시 튜터인지 권한 확인
-    @Operation(summary = "튜터의 Meeting생성 API", description = "튜터가 가능한 시간대에 미팅 데이터를 생성합니다.")
+    @Operation(summary = "튜터의 Meeting 생성 API", description = "튜터가 가능한 시간대에 미팅 데이터를 생성합니다.")
     public ResponseEntity<ApiResponse<Long>> createMeetingByTutor(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody LocalDateTime dateTime) {
@@ -39,7 +39,8 @@ public class MeetingController {
     }
 
     // 2. 학생이 특정 수업을 예약하고 입장
-    @PostMapping("/meetings/{meetingId}/join")
+    @PostMapping("/{meetingId}/join")
+    @Operation(summary = "학생의 튜터링 참여 API", description = "튜터의 미팅 시간이 활성화되면 해당 미팅에 참여요청을 합니다.")
     public ResponseEntity<ApiResponse<SessionResponse>> joinMeeting(
             @PathVariable Long meetingId,
             @AuthenticationPrincipal CustomUserDetails student) { // 현재 로그인한 학생 정보
