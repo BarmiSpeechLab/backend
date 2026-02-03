@@ -74,7 +74,9 @@ public enum ErrorCode {
     // 🤖 AI Integration (FastAPI 연동)
     // =================================================================
     AI_SERVER_ERROR(HttpStatus.BAD_GATEWAY, 50201, "AI 분석 서버와 통신 중 오류가 발생했습니다."),
-    ANALYSIS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 50020, "발음 분석에 실패했습니다. 다시 시도해주세요.");
+    ANALYSIS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, 50020, "발음 분석에 실패했습니다. 다시 시도해주세요."),
+
+    JSON_PARSING_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, 50030, "JSON 파싱 에러입니다.");
 
     private final HttpStatus status;
     private final int code;

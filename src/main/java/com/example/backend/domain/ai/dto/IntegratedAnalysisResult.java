@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Map;
+import java.util.Objects;
 
 @Data
 @Builder
@@ -14,18 +15,16 @@ import java.util.Map;
 public class IntegratedAnalysisResult {
 
     private String taskId;
-    private String status = "PENDING";
-    private String errorMessage;
+    private String status = "PROCESSING";
 
     // 결과 데이터들
-    private Map<String, Object> pronunciation;
-    private Map<String, Object> intonations;
-    private Map<String, Object> llmFeedback;
+    private Object pronunciation;
+    private Object intonations;
+    private Object llmFeedback;
 
-    // 에러 마킹용
-    public void markAsError(String message) {
+    // 에러 발생 시 상태 변경을 위한 메서드
+    public void markAsError() {
         this.status = "ERROR";
-        this.errorMessage = message;
     }
 
     // 분석 완료 여부 확인
