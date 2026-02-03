@@ -32,6 +32,6 @@ public class CurriculumStats {
     private Integer score;
 
     public void updateScore(int score) {
-        this.score = score;
+        if(this.score < score) this.score = score;
     }
 }
