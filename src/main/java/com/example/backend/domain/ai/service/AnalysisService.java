@@ -55,11 +55,9 @@ public class AnalysisService {
         Map<String, Object> cDataMap = curriculum.getCData();
         Object analysisData = cDataMap.get("analysis");
 
-        // 3. 만약 AI 서버가 '문자열'이 아닌 '객체' 형태를 원한다면
-        // 아래와 같이 요청 데이터를 조립합니다.
         Map<String, Object> request = new HashMap<>();
+        request.put("file", savedFileName);
         request.put("taskId", taskId);
-        request.put("filePath", savedFileName);
         request.put("type", curriculum.getType());
 
         // AI 서버 규격에 맞춰 "analysisRequest"라는 키에 실제 데이터 주입
