@@ -23,7 +23,7 @@ public class Meeting {
     private String roomId; // WebRTC 연결용 해시 ID (학생 입장 시 생성)
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tutee_id", nullable = false)
+    @JoinColumn(name = "tutee_id")
     private User tutee;
 
     @ManyToOne(fetch = FetchType.LAZY)
