@@ -2,9 +2,12 @@ package com.example.backend.domain.report.service;
 
 import com.example.backend.domain.curriculum.repository.CurriculumStatsRepository;
 import com.example.backend.domain.report.dto.CalendarLogResponse;
+import com.example.backend.domain.report.dto.IpaStatDto;
 import com.example.backend.domain.report.dto.MyReportResponse;
 import com.example.backend.domain.report.entity.DailyStudyLog;
+import com.example.backend.domain.report.entity.UserIpaStats;
 import com.example.backend.domain.report.repository.DailyStudyLogRepository;
+import com.example.backend.domain.report.repository.UserIpaStatsRepository;
 import com.example.backend.domain.user.entity.User;
 import com.example.backend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,6 +27,7 @@ public class ReportService {
     private final DailyStudyLogRepository dailyStudyLogRepository;
     private final CurriculumStatsRepository curriculumStatsRepository;
     private final UserRepository userRepository;
+    private final UserIpaStatsRepository userIpaStatsRepository;
 
     /**
      * 1. 내 학습 전체 통계 조회
@@ -67,6 +72,43 @@ public class ReportService {
         return logs.stream()
                 .map(CalendarLogResponse::from)
                 .collect(Collectors.toList());
+    }
+
+    /*
+    * 3. 타입 별 ipa의 정답률 데이터
+    * - 계층형 데이터로 전처리해서 전송
+    * */
+    public Map<String, Map<String, IpaStatDto>> getIpaAnalysis(Long userId) {
+
+        // 1. DB에서 데이터 조회 (아까 수정한 메서드 사용! 에러 X)
+        // 많이 시도했다는 건 그만큼 취약하다는 뜻으로 간주 -> Top 5 추출
+        List<UserIpaStats> statsList = userIpaStatsRepository.findTop5ByUser_IdOrderByTotalTryCountDesc(userId);
+
+        // 2. 이중 Map 구조로 변환 (Stream API)
+        return statsList.stream()
+                .collect(Collectors.groupingBy(
+                        // 1차 그룹핑: IPA 타입 (VOWEL, CONSONANT)
+                        stat -> stat.getIpa().getType(),
+
+                        // 2차 그룹핑: Key=발음기호, Value=통계DTO
+                        Collectors.toMap(
+                                stat -> stat.getIpa().getSymbol(), // Key
+                                stat -> IpaStatDto.builder()       // Value
+                                        .totalTryCount(stat.getTotalTryCount())
+                                        .successCount(stat.getSuccessCount())
+                                        .accuracy(calculateAccuracy(stat.getTotalTryCount(), stat.getSuccessCount()))
+                                        .build()
+                        )
+                ));
+    }
+
+    // [추가 필요] 정확도 계산 헬퍼 메서드
+    private Double calculateAccuracy(Integer total, Integer success) {
+        if (total == null || total == 0) return 0.0;
+
+        double accuracy = (double) success / total * 100.0;
+        // 소수점 첫째 자리까지 반올림 (예: 88.5)
+        return Math.round(accuracy * 10.0) / 10.0;
     }
 
     // 유저 조회 헬퍼 메서드

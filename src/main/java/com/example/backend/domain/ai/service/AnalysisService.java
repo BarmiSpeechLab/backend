@@ -1,6 +1,5 @@
 package com.example.backend.domain.ai.service;
 
-import com.example.backend.domain.ai.dto.AnalysisRequestDto;
 import com.example.backend.domain.ai.dto.IntegratedAnalysisResult;
 import com.example.backend.domain.ai.producer.AiClient;
 import com.example.backend.domain.curriculum.entity.Curriculum;
@@ -22,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
