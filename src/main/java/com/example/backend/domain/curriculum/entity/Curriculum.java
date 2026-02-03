@@ -39,5 +39,9 @@ public class Curriculum {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "json")
-    private Map<String, Object> cData;   // 모델이 분석한 정답데이터 저장 컬럼
+    private Map<String, Object> cData;   // 모델이 분석한 발음 정답데이터 저장 컬럼
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "json")
+    private Map<String, Object> intonData;   // 모델이 분석한 인토네이션 정답데이터 저장 컬럼
 }
