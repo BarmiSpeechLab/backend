@@ -1,6 +1,5 @@
 package com.example.backend.domain.ai.service;
 
-import com.example.backend.domain.ai.dto.AnalysisRequestDto;
 import com.example.backend.domain.ai.dto.IntegratedAnalysisResult;
 import com.example.backend.domain.ai.producer.AiClient;
 import com.example.backend.domain.curriculum.entity.Curriculum;
@@ -54,10 +53,9 @@ public class AnalysisService {
         request.put("type", curriculum.getType());
         request.put("analysisRequest", curriculum.getCData());  // 정답 데이터
 
-
         // 프로듀서 호출 (메시지 전송)
         aiClient.sendJob(request);
-        
+
         // 전송 완료 및 로그 체크
         log.info(request.toString());
 
@@ -92,12 +90,6 @@ public class AnalysisService {
                 case "PRON" -> report.setPronunciation(rawData);
                 case "INTON" -> report.setIntonations(rawData);
                 case "LLM" -> report.setLlmFeedback(rawData);
-                case "ERROR" -> {
-                    report.setStatus("ERROR");
-                    // AI가 보내준 에러 메시지가 있으면 저장, 없으면 기본 메시지
-                    Object msg = rawData.get("result");
-                    report.setErrorMessage(msg != null ? msg.toString() : "AI 분석 오류 발생");
-                }
             }
 
             return report; // 업데이트된 객체 리턴 (캐시에 자동 저장됨)
@@ -110,6 +102,7 @@ public class AnalysisService {
         // 1. 캐시 가져오기
         org.springframework.cache.Cache cache = cacheManager.getCache("analysis_results");
         if (cache == null) return null;
+
         // 2. TaskId로 데이터 조회
         // (CacheWrapper에서 실제 값 꺼내기)
         IntegratedAnalysisResult result = cache.get(taskId, IntegratedAnalysisResult.class);
@@ -121,9 +114,11 @@ public class AnalysisService {
         if (result == null) {
             return null;
         }
+
         // 분석 완료 (덮어쓰기해서 하나씩 )
         // DB 로직은 세 개 다 있어야 실행된다
         if (isAnalysisComplete(result)){
+
             User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
             Curriculum curriculum = curriculumRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.EXPRESSION_NOT_FOUND));
 
