@@ -76,25 +76,30 @@ public class MeetingService {
     }
 
     // 세션 접속 토큰 발급
-    public String createToken(String sessionId)
-            throws OpenViduJavaClientException, OpenViduHttpException {
+    public String createToken(String sessionId) {
 
         // 1. 현재 열려있는 세션(방) 가져오기
         Session session = this.openVidu.getActiveSession(sessionId);
 
         // 2. 방이 없으면 예외 처리
         if (session == null) {
-            throw new IllegalArgumentException("Session ID not found: " + sessionId);
+            throw new CustomException(ErrorCode.MEETING_NOT_FOUND);
+        }
+        try {
+            // 3. 연결 속성 설정 (기본값 사용)
+            ConnectionProperties properties = new ConnectionProperties.Builder().build();
+            // 4. 세션(방)에 들어갈 연결(Connection) 생성 요청
+            Connection connection = session.createConnection(properties);
+            // 5. 토큰 반환
+            return connection.getToken();
+        } catch (OpenViduHttpException e) {
+            log.error("OpenVidu 토큰 생성 중 HTTP 에러 발생: {}", e.getMessage());
+            throw new CustomException(ErrorCode.OPENVIDU_HTTP_ERROR);
+        } catch (OpenViduJavaClientException e) {
+            log.error("OpenVidu 토큰 생성 중 클라이언트 에러 발생: {}", e.getMessage());
+            throw new CustomException(ErrorCode.OPENVIDU_CLIENT_ERROR);
         }
 
-        // 3. 연결 속성 설정 (기본값 사용)
-        ConnectionProperties properties = new ConnectionProperties.Builder().build();
-
-        // 4. 세션(방)에 들어갈 연결(Connection) 생성 요청
-        Connection connection = session.createConnection(properties);
-        
-        // 5. 토큰 반환
-        return connection.getToken();
     }
 
     @Transactional
