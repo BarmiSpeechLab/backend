@@ -79,19 +79,21 @@ public class ReportService {
     * - 계층형 데이터로 전처리해서 전송
     * */
     public Map<String, Map<String, IpaStatDto>> getIpaAnalysis(Long userId) {
-        // 1. DB에서 데이터 조회
-        List<UserIpaStats> statsList = userIpaStatsRepository.findAllByUserIdWithIpa(userId);
 
-        // 2. 이중 Map 구조로 변환
+        // 1. DB에서 데이터 조회 (아까 수정한 메서드 사용! 에러 X)
+        // 많이 시도했다는 건 그만큼 취약하다는 뜻으로 간주 -> Top 5 추출
+        List<UserIpaStats> statsList = userIpaStatsRepository.findTop5ByUser_IdOrderByTotalTryCountDesc(userId);
+
+        // 2. 이중 Map 구조로 변환 (Stream API)
         return statsList.stream()
                 .collect(Collectors.groupingBy(
-                        // 1차 그룹핑 기준: IPA 타입 (VOWEL, CONSONANT 등)
+                        // 1차 그룹핑: IPA 타입 (VOWEL, CONSONANT)
                         stat -> stat.getIpa().getType(),
 
-                        // 2차 그룹핑 (Map으로 변환): Key=발음기호, Value=통계DTO
+                        // 2차 그룹핑: Key=발음기호, Value=통계DTO
                         Collectors.toMap(
-                                stat -> stat.getIpa().getSymbol(), // Key: symbol
-                                stat -> IpaStatDto.builder()       // Value: DTO 생성
+                                stat -> stat.getIpa().getSymbol(), // Key
+                                stat -> IpaStatDto.builder()       // Value
                                         .totalTryCount(stat.getTotalTryCount())
                                         .successCount(stat.getSuccessCount())
                                         .accuracy(calculateAccuracy(stat.getTotalTryCount(), stat.getSuccessCount()))
@@ -100,12 +102,14 @@ public class ReportService {
                 ));
     }
 
-    // 정답률 계산 헬퍼 메서드 (0으로 나누기 방지)
-    private Double calculateAccuracy(int total, int success) {
-        if (total == 0) return 0.0;
-        return Math.round((double) success / total * 1000) / 10.0; // 소수점 첫째자리까지 (예: 95.5)
-    }
+    // [추가 필요] 정확도 계산 헬퍼 메서드
+    private Double calculateAccuracy(Integer total, Integer success) {
+        if (total == null || total == 0) return 0.0;
 
+        double accuracy = (double) success / total * 100.0;
+        // 소수점 첫째 자리까지 반올림 (예: 88.5)
+        return Math.round(accuracy * 10.0) / 10.0;
+    }
 
     // 유저 조회 헬퍼 메서드
     // TODO : 나중에 분리해야 할 것 같음

@@ -3,8 +3,10 @@ package com.example.backend.domain.ai.service;
 import com.example.backend.domain.ai.dto.IntegratedAnalysisResult;
 import com.example.backend.domain.ai.producer.AiClient;
 import com.example.backend.domain.curriculum.entity.Curriculum;
+import com.example.backend.domain.curriculum.entity.CurriculumStats;
 import com.example.backend.domain.curriculum.repository.CurriculumRepository;
 import com.example.backend.domain.curriculum.repository.CurriculumStatsRepository;
+import com.example.backend.domain.report.entity.DailyStudyLog;
 import com.example.backend.domain.report.repository.DailyStudyLogRepository;
 import com.example.backend.domain.user.entity.User;
 import com.example.backend.domain.user.repository.UserRepository;
@@ -18,6 +20,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.*;
 
 @Service
