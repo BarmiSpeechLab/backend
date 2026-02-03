@@ -13,6 +13,8 @@ import com.example.backend.domain.user.repository.UserRepository;
 import com.example.backend.global.exception.CustomException;
 import com.example.backend.global.exception.ErrorCode;
 import com.example.backend.global.infra.file.FileService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,7 @@ public class AnalysisService {
     private final CurriculumStatsRepository curriculumStatsRepository;
     private final DailyStudyLogRepository dailyStudyLogRepository;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
 
     // 분석 요청 서비스 메서드
     // request -> AI
@@ -47,25 +50,34 @@ public class AnalysisService {
                 .orElseThrow(()->new CustomException(ErrorCode.EXPRESSION_NOT_FOUND));
         // task id 생성
         String taskId = "REQ_" + UUID.randomUUID().toString().substring(0, 8);
-        // 요청 데이터 조립 (Map 사용)
+        // 2. cData가 Map이므로 바로 "analysis" 키의 값을 꺼냅니다.
+        // SQL 구조상 {"analysis": {...}} 형태이므로 get("analysis") 결과는 다시 Map이 됩니다.
+        Map<String, Object> cDataMap = curriculum.getCData();
+        Object analysisData = cDataMap.get("analysis");
+
+        // 3. 만약 AI 서버가 '문자열'이 아닌 '객체' 형태를 원한다면
+        // 아래와 같이 요청 데이터를 조립합니다.
         Map<String, Object> request = new HashMap<>();
-        request.put("taskId", taskId);             // 식별자
-        request.put("filePath", savedFileName);    // 파일 경로
+        request.put("taskId", taskId);
+        request.put("filePath", savedFileName);
         request.put("type", curriculum.getType());
-        request.put("analysisRequest", curriculum.getCData());  // 정답 데이터
 
-        // 프로듀서 호출 (메시지 전송)
+        // AI 서버 규격에 맞춰 "analysisRequest"라는 키에 실제 데이터 주입
+        request.put("analysisRequest", analysisData);
+
+        // 4. 전송
         aiClient.sendJob(request);
-
-        // 전송 완료 및 로그 체크
-        log.info(request.toString());
-
+        log.info("AI 분석 요청 데이터: {}", request);
         return taskId;
     }
 
     // AI 결과 통합 저장 서비스 메서드
     // AI -> Spring Cache
     public void saveResult(String taskId, String type, Map<String, Object> rawData) {
+        if (taskId == null) {
+            log.error("TaskId가 누락된 결과가 수신되었습니다. Type: {}", type);
+            return;
+        }
         // 1. 스프링 캐시 매니저에서 껍데기(Spring Cache) 가져오기
         org.springframework.cache.Cache springCache = cacheManager.getCache("analysis_results");
         if (springCache == null) return;    // 동적생성금지 옵션이 켜지거나 다른 캐시매니저로 교체했을때를 대비
