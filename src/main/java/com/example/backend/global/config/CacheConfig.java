@@ -26,6 +26,15 @@ public class CacheConfig {
                         .build()
         );
 
+        // 2. 대화 분석 결과 캐시 등록
+        cacheManager.registerCustomCache("conversation_results",
+                Caffeine.newBuilder()
+                        .expireAfterWrite(30, TimeUnit.MINUTES)
+                        .maximumSize(1000)
+                        .recordStats()
+                        .build()
+        );
+
         return cacheManager;
     }
 }
