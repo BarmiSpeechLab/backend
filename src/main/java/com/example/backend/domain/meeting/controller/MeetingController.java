@@ -4,12 +4,18 @@ import com.example.backend.domain.meeting.dto.SessionCreateRequest;
 import com.example.backend.domain.meeting.dto.SessionResponse;
 import com.example.backend.domain.meeting.service.MeetingService;
 import com.example.backend.domain.meeting.dto.MeetingTokenResponse;
+import com.example.backend.domain.user.entity.User;
 import com.example.backend.global.dto.ApiResponse;
+import com.example.backend.global.userdetails.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/meetings")
@@ -19,6 +25,28 @@ import org.springframework.web.bind.annotation.*;
 public class MeetingController {
     
     private final MeetingService meetingService;
+
+    // 1. 튜터가 수업 시간대 생성
+    @PostMapping("/meetings")
+    @PreAuthorize("hasRole('TUTOR')")   // api 요청 시 튜터인지 권한 확인
+    @Operation(summary = "튜터의 Meeting생성 API", description = "튜터가 가능한 시간대에 미팅 데이터를 생성합니다.")
+    public ResponseEntity<ApiResponse<Long>> createMeetingByTutor(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody LocalDateTime dateTime) {
+        // 튜터 정보와 시간을 받아 Meeting 엔티티 저장 로직 호출
+        Long meetingId = meetingService.createEmptyMeeting(userDetails.getUserId(), dateTime);
+        return ResponseEntity.ok(ApiResponse.success(meetingId));
+    }
+
+    // 2. 학생이 특정 수업을 예약하고 입장
+    @PostMapping("/meetings/{meetingId}/join")
+    public ResponseEntity<ApiResponse<SessionResponse>> joinMeeting(
+            @PathVariable Long meetingId,
+            @AuthenticationPrincipal CustomUserDetails student) { // 현재 로그인한 학생 정보
+
+        String sessionId = meetingService.reserveMeeting(meetingId, student.getUserEntity());
+        return ResponseEntity.ok(ApiResponse.success(new SessionResponse(sessionId)));
+    }
 
     @Operation(summary = "튜터링 방 생성 API", description = "튜터와 학생의 튜터링 미팅룸을 생성합니다.")
     @PostMapping("/sessions")
