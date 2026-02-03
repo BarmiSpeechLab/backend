@@ -18,9 +18,9 @@ public class ApiLogAspect {
     private final ApiLogService apiLogService;
     private final ObjectMapper objectMapper;
 
-    // 모든 컨트롤러 메서드를 대상으로 설정
+    // 모든 컨트롤러 메서드를 대상으로 설정a
     @Around("execution(* com.example.backend..controller..*.*(..)) " +
-            "&& !execution(* com.example.backend..controller.AnalysisController.requestResult(..))")
+            "&& !execution(* com.example.backend..controller.AnalysisController.*(..))")
     public Object logApi(ProceedingJoinPoint joinPoint) throws Throwable {
         long start = System.currentTimeMillis();
 
