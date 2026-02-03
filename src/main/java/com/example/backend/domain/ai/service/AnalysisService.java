@@ -52,8 +52,12 @@ public class AnalysisService {
         request.put("type", curriculum.getType());
         request.put("analysisRequest", curriculum.getCData());  // 정답 데이터
 
+
         // 프로듀서 호출 (메시지 전송)
         aiClient.sendJob(request);
+        
+        // 전송 완료 및 로그 체크
+        log.info(request.toString());
 
         return taskId;
     }
