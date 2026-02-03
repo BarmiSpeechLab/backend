@@ -32,12 +32,12 @@ public enum ErrorCode {
     TUTOR_ONLY_ACCESS(HttpStatus.FORBIDDEN, 40302, "튜터만 접근 가능한 기능입니다."),
 
     // =================================================================
-    // 👤 Member (회원)
+    // 👤 User (회원)
     // =================================================================
-    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, 40401, "해당 사용자를 찾을 수 없습니다."),
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, 40401, "해당 사용자를 찾을 수 없습니다."),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, 40901, "이미 가입된 이메일입니다."),
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, 40902, "이미 사용 중인 닉네임입니다."),
-    DUPLICATE_ID(HttpStatus.CONFLICT, 40902, "중복유저."),
+    DUPLICATE_ID(HttpStatus.CONFLICT, 40902, "유저 ID가 중복되었습니다."),
 
     // =================================================================
     // 📚 Curriculum & Practice (학습 & 발음 연습)
