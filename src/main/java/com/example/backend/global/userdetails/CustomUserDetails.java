@@ -33,6 +33,27 @@ public class CustomUserDetails implements UserDetails {
         // ID(LONG)를 String으로 반환
         return String.valueOf(user.getId());
     }
+    /**
+     * DB PK를 Long 타입으로 바로 반환
+     */
+    public Long getUserId() {
+        return user.getId();
+    }
+
+    /**
+     * 유저 엔티티 본체 반환
+     */
+    public User getUserEntity() {
+        return user;
+    }
+
+    /**
+     * 이메일 반환
+     */
+    public String getEmail() {
+        return user.getEmail();
+    }
+
 
     // 4. 계정 상태 여부 (지금은 안 쓰니까 모두 true로 설정)
     @Override

@@ -105,7 +105,7 @@ class JwtTokenProviderTest {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
         // then
-        assertThat(userDetails.getUsername()).isEqualTo(String.valueOf(userId));
-        System.out.println("Extracted User ID: " + userDetails.getUsername());
+        assertThat(userDetails.getUserId()).isEqualTo(String.valueOf(userId));
+        System.out.println("Extracted User ID: " + userDetails.getUserId());
     }
 }

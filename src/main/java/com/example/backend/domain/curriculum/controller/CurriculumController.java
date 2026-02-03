@@ -27,12 +27,12 @@ public class CurriculumController {
     @Operation(summary = "커리큘럼 목록 조회 API", description = "커리큘럼 목록을 조회합니다.")
     @GetMapping("/{type}/{theme}")
     public ResponseEntity<ApiResponse<List<CurriculumResponse>>> getCurriculumList(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable String type,
             @PathVariable String theme
     ) {
 
-        List<CurriculumResponse> response = curriculumService.getCurriculumList(Long.parseLong(userDetails.getUsername()), type, theme);
+        List<CurriculumResponse> response = curriculumService.getCurriculumList(userDetails.getUserId(), type, theme);
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -43,7 +43,7 @@ public class CurriculumController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long curriculumId) {
 
-        CurriculumResponse response = curriculumService.getCurriculumDetail(Long.parseLong(userDetails.getUsername()), curriculumId);
+        CurriculumResponse response = curriculumService.getCurriculumDetail(userDetails.getUserId(), curriculumId);
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }

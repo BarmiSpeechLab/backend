@@ -117,12 +117,10 @@ public class AnalysisService {
             cache.evict(taskId); // 캐시 삭제 (선택사항)
             return result;
         }
-
         // 데이터가 없으면 null 반환
         if (result == null) {
             return null;
         }
-
         // 분석 완료 (덮어쓰기해서 하나씩 )
         // DB 로직은 세 개 다 있어야 실행된다
         if (isAnalysisComplete(result)){
