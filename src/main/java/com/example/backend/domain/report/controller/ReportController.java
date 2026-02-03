@@ -1,6 +1,7 @@
 package com.example.backend.domain.report.controller;
 
 import com.example.backend.domain.report.dto.CalendarLogResponse;
+import com.example.backend.domain.report.dto.IpaStatDto;
 import com.example.backend.domain.report.dto.MyReportResponse;
 import com.example.backend.domain.report.service.ReportService;
 import com.example.backend.global.dto.ApiResponse;
@@ -14,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/reports")
@@ -42,6 +44,16 @@ public class ReportController {
 
         return ResponseEntity.ok(ApiResponse.success(
                 reportService.getCalendarLogs(Long.parseLong(userDetails.getUsername()), year, month)
+        ));
+    }
+
+    @Operation(summary = "타입별 IPA 정답률 API", description = "레이더 차트 랜더링을 위한 타입별 IPA 정답률 데이터를 응답합니다.")
+    @GetMapping("/radar-chart")
+    public ResponseEntity<ApiResponse<Map<String, Map<String, IpaStatDto>>>> getIpaStats(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                reportService.getIpaAnalysis(Long.parseLong(userDetails.getUsername()))
         ));
     }
 }

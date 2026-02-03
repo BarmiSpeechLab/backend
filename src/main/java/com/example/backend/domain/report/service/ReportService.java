@@ -2,9 +2,12 @@ package com.example.backend.domain.report.service;
 
 import com.example.backend.domain.curriculum.repository.CurriculumStatsRepository;
 import com.example.backend.domain.report.dto.CalendarLogResponse;
+import com.example.backend.domain.report.dto.IpaStatDto;
 import com.example.backend.domain.report.dto.MyReportResponse;
 import com.example.backend.domain.report.entity.DailyStudyLog;
+import com.example.backend.domain.report.entity.UserIpaStats;
 import com.example.backend.domain.report.repository.DailyStudyLogRepository;
+import com.example.backend.domain.report.repository.UserIpaStatsRepository;
 import com.example.backend.domain.user.entity.User;
 import com.example.backend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,6 +27,7 @@ public class ReportService {
     private final DailyStudyLogRepository dailyStudyLogRepository;
     private final CurriculumStatsRepository curriculumStatsRepository;
     private final UserRepository userRepository;
+    private final UserIpaStatsRepository userIpaStatsRepository;
 
     /**
      * 1. 내 학습 전체 통계 조회
@@ -68,6 +73,39 @@ public class ReportService {
                 .map(CalendarLogResponse::from)
                 .collect(Collectors.toList());
     }
+
+    /*
+    * 3. 타입 별 ipa의 정답률 데이터
+    * - 계층형 데이터로 전처리해서 전송
+    * */
+    public Map<String, Map<String, IpaStatDto>> getIpaAnalysis(Long userId) {
+        // 1. DB에서 데이터 조회
+        List<UserIpaStats> statsList = userIpaStatsRepository.findAllByUserIdWithIpa(userId);
+
+        // 2. 이중 Map 구조로 변환
+        return statsList.stream()
+                .collect(Collectors.groupingBy(
+                        // 1차 그룹핑 기준: IPA 타입 (VOWEL, CONSONANT 등)
+                        stat -> stat.getIpa().getType(),
+
+                        // 2차 그룹핑 (Map으로 변환): Key=발음기호, Value=통계DTO
+                        Collectors.toMap(
+                                stat -> stat.getIpa().getSymbol(), // Key: symbol
+                                stat -> IpaStatDto.builder()       // Value: DTO 생성
+                                        .totalTryCount(stat.getTotalTryCount())
+                                        .successCount(stat.getSuccessCount())
+                                        .accuracy(calculateAccuracy(stat.getTotalTryCount(), stat.getSuccessCount()))
+                                        .build()
+                        )
+                ));
+    }
+
+    // 정답률 계산 헬퍼 메서드 (0으로 나누기 방지)
+    private Double calculateAccuracy(int total, int success) {
+        if (total == 0) return 0.0;
+        return Math.round((double) success / total * 1000) / 10.0; // 소수점 첫째자리까지 (예: 95.5)
+    }
+
 
     // 유저 조회 헬퍼 메서드
     // TODO : 나중에 분리해야 할 것 같음
