@@ -34,8 +34,17 @@ public class MeetingService {
 
     // 새로운 미팅 데이터 생성
     public Long createEmptyMeeting(Long userId, LocalDateTime dateTime) {
-        User user = userRepository.findById(userId).orElseThrow(()->new CustomException(ErrorCode.USER_NOT_FOUND));
-        return meetingRepository.save(new Meeting(user, dateTime)).getId();
+        User tutor = userRepository.findById(userId).orElseThrow(()->new CustomException(ErrorCode.USER_NOT_FOUND));
+        // [중복 검증]
+        if (meetingRepository.existsByTutorAndDatetime(tutor, dateTime)) {
+            throw new CustomException(ErrorCode.DUPLICATE_ROOM);
+        }
+        Meeting meeting = Meeting.builder()
+                .tutor(tutor)
+                .datetime(dateTime)
+                .build();
+
+        return meetingRepository.save(meeting).getId();
     }
 
     public String createSession(SessionCreateRequest request) // 1. DTO를 파라미터로 받음

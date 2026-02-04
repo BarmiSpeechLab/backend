@@ -10,6 +10,8 @@ import com.example.backend.domain.report.repository.DailyStudyLogRepository;
 import com.example.backend.domain.report.repository.UserIpaStatsRepository;
 import com.example.backend.domain.user.entity.User;
 import com.example.backend.domain.user.repository.UserRepository;
+import com.example.backend.global.exception.CustomException;
+import com.example.backend.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -85,18 +87,28 @@ public class ReportService {
         List<UserIpaStats> statsList = userIpaStatsRepository.findTop5ByUser_IdOrderByTotalTryCountDesc(userId);
 
         // 2. 이중 Map 구조로 변환 (Stream API)
+        // 중복된 IPA symbol이 있을 경우 합산
         return statsList.stream()
                 .collect(Collectors.groupingBy(
                         // 1차 그룹핑: IPA 타입 (VOWEL, CONSONANT)
                         stat -> stat.getIpa().getType(),
 
-                        // 2차 그룹핑: Key=발음기호, Value=통계DTO
+                        // 2차 그룹핑: Key=발음기호, Value=통계DTO (중복 시 합산)
                         Collectors.toMap(
                                 stat -> stat.getIpa().getSymbol(), // Key
                                 stat -> IpaStatDto.builder()       // Value
                                         .totalTryCount(stat.getTotalTryCount())
                                         .successCount(stat.getSuccessCount())
                                         .accuracy(calculateAccuracy(stat.getTotalTryCount(), stat.getSuccessCount()))
+                                        .build(),
+                                // 중복 키가 있을 경우 합산
+                                (existing, replacement) -> IpaStatDto.builder()
+                                        .totalTryCount(existing.getTotalTryCount() + replacement.getTotalTryCount())
+                                        .successCount(existing.getSuccessCount() + replacement.getSuccessCount())
+                                        .accuracy(calculateAccuracy(
+                                                existing.getTotalTryCount() + replacement.getTotalTryCount(),
+                                                existing.getSuccessCount() + replacement.getSuccessCount()
+                                        ))
                                         .build()
                         )
                 ));
@@ -115,6 +127,6 @@ public class ReportService {
     // TODO : 나중에 분리해야 할 것 같음
     private User getUser(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 }
