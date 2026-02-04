@@ -1,12 +1,7 @@
 package com.example.backend.domain.meeting.controller;
 
-import com.example.backend.domain.meeting.Entity.Meeting;
-import com.example.backend.domain.meeting.dto.MeetingJoinResponse;
-import com.example.backend.domain.meeting.dto.SessionCreateRequest;
-import com.example.backend.domain.meeting.dto.SessionResponse;
+import com.example.backend.domain.meeting.dto.*;
 import com.example.backend.domain.meeting.service.MeetingService;
-import com.example.backend.domain.meeting.dto.MeetingTokenResponse;
-import com.example.backend.domain.user.entity.User;
 import com.example.backend.global.dto.ApiResponse;
 import com.example.backend.global.userdetails.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -101,8 +96,15 @@ public class MeetingController {
     
     @Operation(summary = "튜터 일정 조회 API", description = "특정 튜터의 예약 가능한 일정(tutee가 null)을 반환합니다.")
     @GetMapping("/tutor/{tutorId}/available")
-    public ResponseEntity<ApiResponse<java.util.List<com.example.backend.domain.meeting.dto.MeetingResponse>>> getAvailableSlots(@PathVariable Long tutorId) {
-        java.util.List<com.example.backend.domain.meeting.dto.MeetingResponse> availableSlots = meetingService.findAvailableSlots(tutorId);
+    public ResponseEntity<ApiResponse<java.util.List<MeetingResponse>>> getAvailableSlots(@PathVariable Long tutorId) {
+        java.util.List<MeetingResponse> availableSlots = meetingService.findAvailableSlots(tutorId);
+        return ResponseEntity.ok(ApiResponse.success(availableSlots));
+    }
+    @Operation(summary = "튜티 예약 조회 API", description = "특정 튜티의 미팅 예약 일정을 반환합니다.")
+    @GetMapping("/reserved")
+    public ResponseEntity<ApiResponse<java.util.List<MeetingResponse>>> getMyReservation(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        java.util.List<MeetingResponse> availableSlots = meetingService.findReservedMeetings(userDetails.getUserId());
         return ResponseEntity.ok(ApiResponse.success(availableSlots));
     }
 }
