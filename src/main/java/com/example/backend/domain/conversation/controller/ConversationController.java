@@ -28,11 +28,10 @@ public class ConversationController {
     public ResponseEntity<String> requestAnalysis(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestPart("file") MultipartFile file,
-            @RequestParam Long curriculumId,
             @RequestParam String prevTurn,
             @RequestParam String theme
     ) {
-        String taskId = conversationService.requestConversationAnalysis(file, curriculumId, prevTurn, theme);
+        String taskId = conversationService.requestConversationAnalysis(file, prevTurn, theme);
         return ResponseEntity.ok("대화 분석 요청 성공: " + taskId);
     }
 

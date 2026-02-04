@@ -35,27 +35,22 @@ public class ConversationService {
      * 대화 분석 요청 서비스 메서드
      * Spring -> AI Gateway (RabbitMQ)
      */
-    public String requestConversationAnalysis(MultipartFile file, Long curriculumId, String prevTurn, String theme) {
+    public String requestConversationAnalysis(MultipartFile file, String prevTurn, String theme) {
         // 파일 저장
         String savedFileName = fileService.saveFile(file);
-        
-        // 커리큘럼 조회
-        Curriculum curriculum = curriculumRepository.findById(curriculumId)
-                .orElseThrow(() -> new CustomException(ErrorCode.EXPRESSION_NOT_FOUND));
-        
         // Task ID 생성
         String taskId = "CONV_" + UUID.randomUUID().toString().substring(0, 8);
         
-        // 대화 요청 데이터 준비 (팀 스펙에 맞춤)
-        Map<String, Object> analysisResult = new HashMap<>();
-        analysisResult.put("prevTurn", prevTurn);
-        analysisResult.put("theme", theme);
+        // 대화 요청 데이터 준비 (FastAPI snake_case 맞춤)
+        Map<String, Object> analysisRequest = new HashMap<>();
+        analysisRequest.put("prev_turn", prevTurn);  // ✅ snake_case
+        analysisRequest.put("theme", theme);
 
         Map<String, Object> request = new HashMap<>();
         request.put("file_path", savedFileName);
-        request.put("taskId", taskId);
+        request.put("task_id", taskId);
         request.put("type", "conversation");  // 대화 분석 타입
-        request.put("analysisResult", analysisResult);  // analysisRequest -> analysisResult로 변경
+        request.put("analysis_request", analysisRequest);  // ✅ snake_case
 
         // AI 서버로 전송 (conversation.jobs 큐)
         aiClient.sendConversationJob(request);
@@ -126,29 +121,29 @@ public class ConversationService {
         org.springframework.cache.Cache cache = cacheManager.getCache("conversation_results");
         if (cache == null) {
             return createProcessingResult(taskId);
-        }
+     }
 
-        // TaskId로 데이터 조회
-        ConversationAnalysisResult result = cache.get(taskId, ConversationAnalysisResult.class);
-        if (result == null) {
-            return createProcessingResult(taskId);
-        }
+     // TaskId로 데이터 조회
+     ConversationAnalysisResult result = cache.get(taskId, ConversationAnalysisResult.class);
+     if (result == null) {
+     return createProcessingResult(taskId);
+     }
 
-        if ("ERROR".equals(result.getStatus())) {
-            cache.evict(taskId);
-            return result;
-        }
+     if ("ERROR".equals(result.getStatus())) {
+     cache.evict(taskId);
+     return result;
+     }
 
-        // 분석 완료 시 캐시 삭제
-        if (result.isComplete()) {
-            cache.evict(taskId);
-            result.setStatus("SUCCESS");
-        }
+     // 분석 완료 시 캐시 삭제
+     if (result.isComplete()) {
+     cache.evict(taskId);
+     result.setStatus("SUCCESS");
+     }
 
-        return result;
-    }
+     return result;
+     }
 
-    /**
+     /**
      * PROCESSING 상태의 빈 결과 객체 생성
      */
     private ConversationAnalysisResult createProcessingResult(String taskId) {
