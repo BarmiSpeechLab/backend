@@ -101,7 +101,7 @@ public class MeetingController {
         return ResponseEntity.ok(ApiResponse.success(availableSlots));
     }
     @Operation(summary = "튜티 예약 조회 API", description = "특정 튜티의 미팅 예약 일정을 반환합니다.")
-    @GetMapping("/tutor/reserved")
+    @GetMapping("/reserved")
     public ResponseEntity<ApiResponse<java.util.List<MeetingResponse>>> getMyReservation(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         java.util.List<MeetingResponse> availableSlots = meetingService.findReservedMeetings(userDetails.getUserId());
