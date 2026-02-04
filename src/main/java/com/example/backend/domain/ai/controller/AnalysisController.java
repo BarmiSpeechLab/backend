@@ -38,26 +38,16 @@ public class AnalysisController {
 
     @Operation(summary = "음성데이터 피드백 결과 요청(Polling)", description = "음성 파일에 대한 AI 분석 결과를 요청합니다")
     @GetMapping("/{curriculumId}/{taskId}")
-    public ResponseEntity<String> requestResult(
+    public ResponseEntity<IntegratedAnalysisResult> requestResult(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable String taskId,
             @PathVariable Long curriculumId
     ) {
-        // 캐시 조회
+        // 캐시 조회 및 DB 업데이트 (완료 시)
         IntegratedAnalysisResult result = analysisService.getResult(userDetails.getUserId(), taskId, curriculumId);
-//        // 서비스 메서드 호출 (여기서 모든 DB 업데이트가 일어남)
-//        if (result == null) {
-//            // 1. 아직 분석 중인 경우: 202 Accepted 또는 200 OK + "처리중" 메시지
-//            return ResponseEntity.ok().body("PROCESSING");
-//        }
-        /*
-          TODO
-            1.taskId로 캐시에 저장된 전체 피드백 결과를 가져오기
-            2.result를 결과 통계에 업데이트
-            3.user log(방문기록) 테이블 업데이트
-            4.전체 결과 반환
-        */
-        return ResponseEntity.ok("현재 데이터 : " + result);
+        
+        // 결과 반환 (JSON 직렬화)
+        return ResponseEntity.ok(result);
     }
 
 }
