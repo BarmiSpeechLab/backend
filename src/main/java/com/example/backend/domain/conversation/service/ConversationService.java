@@ -1,12 +1,14 @@
 package com.example.backend.domain.conversation.service;
 
 import com.example.backend.domain.ai.producer.AiClient;
+import com.example.backend.domain.conversation.dto.ConversationAnalysisDetail;
 import com.example.backend.domain.conversation.dto.ConversationAnalysisResult;
 import com.example.backend.domain.curriculum.entity.Curriculum;
 import com.example.backend.domain.curriculum.repository.CurriculumRepository;
 import com.example.backend.global.exception.CustomException;
 import com.example.backend.global.exception.ErrorCode;
 import com.example.backend.global.infra.file.FileService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,12 +29,13 @@ public class ConversationService {
     private final FileService fileService;
     private final CacheManager cacheManager;
     private final CurriculumRepository curriculumRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * 대화 분석 요청 서비스 메서드
      * Spring -> AI Gateway (RabbitMQ)
      */
-    public String requestConversationAnalysis(MultipartFile file, Long curriculumId) {
+    public String requestConversationAnalysis(MultipartFile file, Long curriculumId, String prevTurn, String theme) {
         // 파일 저장
         String savedFileName = fileService.saveFile(file);
         
@@ -43,15 +46,16 @@ public class ConversationService {
         // Task ID 생성
         String taskId = "CONV_" + UUID.randomUUID().toString().substring(0, 8);
         
-        // 분석 요청 데이터 준비
-        Map<String, Object> cDataMap = curriculum.getCData();
-        Object analysisData = cDataMap.get("analysis");
+        // 대화 요청 데이터 준비 (팀 스펙에 맞춤)
+        Map<String, Object> analysisResult = new HashMap<>();
+        analysisResult.put("prevTurn", prevTurn);
+        analysisResult.put("theme", theme);
 
         Map<String, Object> request = new HashMap<>();
         request.put("file_path", savedFileName);
         request.put("taskId", taskId);
         request.put("type", "conversation");  // 대화 분석 타입
-        request.put("analysisRequest", analysisData);
+        request.put("analysisResult", analysisResult);  // analysisRequest -> analysisResult로 변경
 
         // AI 서버로 전송 (conversation.jobs 큐)
         aiClient.sendConversationJob(request);
@@ -88,9 +92,24 @@ public class ConversationService {
                 result.setTaskId(taskId);
             }
 
-            // 대화 분석 결과 저장
-            result.setConversationResult(rawData);
-            result.setStatus("SUCCESS");
+            // analysisResult 필드 파싱하여 ConversationAnalysisDetail로 변환
+            try {
+                Object analysisResultObj = rawData.get("analysisResult");
+                if (analysisResultObj != null) {
+                    ConversationAnalysisDetail detail = objectMapper.convertValue(
+                        analysisResultObj, 
+                        ConversationAnalysisDetail.class
+                    );
+                    result.setAnalysisResult(detail);
+                    result.setStatus("SUCCESS");
+                    log.info("대화 분석 결과 파싱 성공: {}", detail);
+                } else {
+                    log.warn("analysisResult 필드가 null입니다.");
+                }
+            } catch (Exception e) {
+                log.error("대화 분석 결과 파싱 실패: {}", e.getMessage());
+                result.markAsError();
+            }
 
             return result;
         });

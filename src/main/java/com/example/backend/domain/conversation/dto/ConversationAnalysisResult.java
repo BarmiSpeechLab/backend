@@ -18,8 +18,8 @@ public class ConversationAnalysisResult {
     private String taskId;
     private String status = "PROCESSING"; // PROCESSING, SUCCESS, ERROR
     
-    // AI 분석 결과 (유연한 구조)
-    private Object conversationResult;
+    // AI 분석 결과 (구조화된 타입)
+    private ConversationAnalysisDetail analysisResult;
     
     // 에러 발생 시 상태 변경
     public void markAsError() {
@@ -28,6 +28,6 @@ public class ConversationAnalysisResult {
     
     // 분석 완료 여부 확인
     public boolean isComplete() {
-        return conversationResult != null;
+        return analysisResult != null;
     }
 }
