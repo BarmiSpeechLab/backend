@@ -1,5 +1,7 @@
 package com.example.backend.domain.meeting.controller;
 
+import com.example.backend.domain.meeting.Entity.Meeting;
+import com.example.backend.domain.meeting.dto.MeetingJoinResponse;
 import com.example.backend.domain.meeting.dto.SessionCreateRequest;
 import com.example.backend.domain.meeting.dto.SessionResponse;
 import com.example.backend.domain.meeting.service.MeetingService;
@@ -26,7 +28,6 @@ public class MeetingController {
     
     private final MeetingService meetingService;
 
-    // 1. 튜터가 수업 시간대 생성
     @PostMapping("")
     @PreAuthorize("hasRole('TUTOR')")   // api 요청 시 튜터인지 권한 확인
     @Operation(summary = "튜터의 Meeting 생성 API", description = "튜터가 가능한 시간대에 미팅 데이터를 생성합니다.")
@@ -38,15 +39,18 @@ public class MeetingController {
         return ResponseEntity.ok(ApiResponse.success(meetingId));
     }
 
-    // 2. 학생이 특정 수업을 예약하고 입장
     @PostMapping("/{meetingId}/join")
     @Operation(summary = "학생의 튜터링 참여 API", description = "튜터의 미팅 시간이 활성화되면 해당 미팅에 참여요청을 합니다.")
-    public ResponseEntity<ApiResponse<SessionResponse>> joinMeeting(
+    public ResponseEntity<ApiResponse<MeetingJoinResponse>> joinMeeting(
             @PathVariable Long meetingId,
             @AuthenticationPrincipal CustomUserDetails student) { // 현재 로그인한 학생 정보
-
+        
+        // DB 예약 및 OpenVidu 세션 생성
         String sessionId = meetingService.reserveMeeting(meetingId, student.getUserEntity());
-        return ResponseEntity.ok(ApiResponse.success(new SessionResponse(sessionId)));
+        // 해당 세션에 접속할 수 있는 토큰 발급
+        String token = meetingService.createToken(sessionId);
+
+        return ResponseEntity.ok(ApiResponse.success(new MeetingJoinResponse(sessionId, token)));
     }
 
     @Operation(summary = "튜터링 방 생성 API", description = "튜터와 학생의 튜터링 미팅룸을 생성합니다.")
@@ -93,5 +97,12 @@ public class MeetingController {
         } catch (Exception e) {
             return ResponseEntity.status(404).body(null);
         }
+    }
+    
+    @Operation(summary = "튜터 일정 조회 API", description = "특정 튜터의 예약 가능한 일정(tutee가 null)을 반환합니다.")
+    @GetMapping("/tutor/{tutorId}/available")
+    public ResponseEntity<ApiResponse<java.util.List<com.example.backend.domain.meeting.dto.MeetingResponse>>> getAvailableSlots(@PathVariable Long tutorId) {
+        java.util.List<com.example.backend.domain.meeting.dto.MeetingResponse> availableSlots = meetingService.findAvailableSlots(tutorId);
+        return ResponseEntity.ok(ApiResponse.success(availableSlots));
     }
 }

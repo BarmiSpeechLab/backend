@@ -72,4 +72,9 @@ public class UserService{
 
         user.finishTutorial(); // Entity 메서드 호출 (Dirty Checking으로 자동 저장)
     }
+    
+    // 6. 튜터 목록 조회
+    public java.util.List<User> findTutors() {
+        return userRepository.findByRole(com.example.backend.domain.user.entity.Role.TUTOR);
+    }
 }

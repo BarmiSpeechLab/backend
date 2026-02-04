@@ -75,4 +75,11 @@ public class UserController {
         userService.completeTutorial(userDetails.getUserId());
         return ResponseEntity.ok(ApiResponse.success("온보딩 완료 처리 성공"));
     }
+    
+    @Operation(summary = "튜터 목록 조회 API", description = "role이 TUTOR인 유저 목록을 반환합니다.")
+    @GetMapping("/tutors")
+    public ResponseEntity<ApiResponse<java.util.List<com.example.backend.domain.user.entity.User>>> getTutors() {
+        java.util.List<com.example.backend.domain.user.entity.User> tutors = userService.findTutors();
+        return ResponseEntity.ok(ApiResponse.success(tutors));
+    }
 }
