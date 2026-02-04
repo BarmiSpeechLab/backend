@@ -98,4 +98,11 @@ public class MeetingController {
             return ResponseEntity.status(404).body(null);
         }
     }
+    
+    @Operation(summary = "튜터 일정 조회 API", description = "특정 튜터의 예약 가능한 일정(tutee가 null)을 반환합니다.")
+    @GetMapping("/tutor/{tutorId}/available")
+    public ResponseEntity<ApiResponse<java.util.List<com.example.backend.domain.meeting.dto.MeetingResponse>>> getAvailableSlots(@PathVariable Long tutorId) {
+        java.util.List<com.example.backend.domain.meeting.dto.MeetingResponse> availableSlots = meetingService.findAvailableSlots(tutorId);
+        return ResponseEntity.ok(ApiResponse.success(availableSlots));
+    }
 }

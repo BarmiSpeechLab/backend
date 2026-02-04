@@ -132,4 +132,23 @@ public class MeetingService {
             throw new CustomException(ErrorCode.OPENVIDU_CLIENT_ERROR);
         }
     }
+    
+    // 특정 튜터의 예약 가능한 일정 조회
+    public java.util.List<com.example.backend.domain.meeting.dto.MeetingResponse> findAvailableSlots(Long tutorId) {
+        java.util.List<Meeting> meetings = meetingRepository.findByTutorIdAndTuteeIsNull(tutorId);
+        
+        // Meeting 엔티티를 DTO로 변환
+        return meetings.stream()
+                .map(meeting -> com.example.backend.domain.meeting.dto.MeetingResponse.builder()
+                        .id(meeting.getId())
+                        .datetime(meeting.getDatetime())
+                        .isClosed(meeting.isClosed())
+                        .tutorId(meeting.getTutor().getId())
+                        .tutorNickname(meeting.getTutor().getNickname())
+                        .tuteeId(meeting.getTutee() != null ? meeting.getTutee().getId() : null)
+                        .tuteeNickname(meeting.getTutee() != null ? meeting.getTutee().getNickname() : null)
+                        .roomId(meeting.getRoomId())
+                        .build())
+                .collect(java.util.stream.Collectors.toList());
+    }
 }

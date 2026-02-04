@@ -31,27 +31,29 @@ public class ApiLogAspect {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
         String method = request.getMethod();
         String url = request.getRequestURI();
-        // [개선] MultipartFile 등 직렬화 불가능한 객체 필터링
-        Object[] args = joinPoint.getArgs();
-        List<Object> filteredArgs = new ArrayList<>();
-        for (Object arg : args) {
-            if (arg instanceof org.springframework.web.multipart.MultipartFile) {
-                filteredArgs.add("File: " + ((org.springframework.web.multipart.MultipartFile) arg).getOriginalFilename());
-            } else if (arg instanceof jakarta.servlet.http.HttpServletRequest || arg instanceof jakarta.servlet.http.HttpServletResponse) {
-                continue; // 서블릿 객체는 로깅에서 제외
-            } else {
-                filteredArgs.add(arg);
-            }
+        
+        // 파라미터 파싱 시도 (파싱 가능한 것만 로깅)
+        String params;
+        try {
+            Object[] args = joinPoint.getArgs();
+            params = objectMapper.writeValueAsString(args);
+        } catch (Exception e) {
+            params = "Parameter serialization skipped (Entity or non-serializable object)";
         }
-
-        String params = objectMapper.writeValueAsString(joinPoint.getArgs());
 
         // 2. 실제 비즈니스 로직 실행
         Object result = joinPoint.proceed();
 
         // 3. 응답 및 소요 시간 계산
         long duration = System.currentTimeMillis() - start;
-        String response = objectMapper.writeValueAsString(result);
+        
+        // Meeting 엔티티 등 LAZY 로딩 문제가 있는 객체는 파싱 스킵
+        String response;
+        try {
+            response = objectMapper.writeValueAsString(result);
+        } catch (Exception e) {
+            response = "Response serialization skipped (Entity with LAZY references)";
+        }
 
         // 4. 비동기로 로깅 서비스 호출 (API 응답 속도에 영향을 주지 않음)
         apiLogService.saveApiLog(method, url, params, response, duration);
