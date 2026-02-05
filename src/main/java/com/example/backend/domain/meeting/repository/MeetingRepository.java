@@ -18,4 +18,7 @@ public interface MeetingRepository extends JpaRepository<Meeting, Long> {
 
     // 특정 튜티의 예약 일정 조회
     List<Meeting> findByTuteeId(Long tuteeId);
+
+    // 특정 튜터의 예약 일정 조회
+    List<Meeting> findByTutorId(Long tutorId);
 }

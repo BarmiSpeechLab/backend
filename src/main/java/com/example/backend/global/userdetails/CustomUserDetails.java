@@ -1,5 +1,6 @@
 package com.example.backend.global.userdetails;
 
+import com.example.backend.domain.user.entity.Role;
 import com.example.backend.domain.user.entity.User;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +53,12 @@ public class CustomUserDetails implements UserDetails {
      */
     public String getEmail() {
         return user.getEmail();
+    }
+    /**
+     * 유저의 Role Enum을 직접 반환
+     */
+    public Role getRole() {
+        return user.getRole();
     }
 
 

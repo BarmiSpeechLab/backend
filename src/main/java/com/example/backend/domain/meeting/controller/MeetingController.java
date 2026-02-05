@@ -102,9 +102,9 @@ public class MeetingController {
     }
     @Operation(summary = "튜티 예약 조회 API", description = "특정 튜티의 미팅 예약 일정을 반환합니다.")
     @GetMapping("/reserved")
-    public ResponseEntity<ApiResponse<java.util.List<MeetingResponse>>> getMyReservation(
+    public ResponseEntity<ApiResponse<java.util.List<MeetingResponse>>> getTuteeReservation(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        java.util.List<MeetingResponse> availableSlots = meetingService.findReservedMeetings(userDetails.getUserId());
+        java.util.List<MeetingResponse> availableSlots = meetingService.findReservedMeetings(userDetails.getUserId(), userDetails.getRole());
         return ResponseEntity.ok(ApiResponse.success(availableSlots));
     }
 }
