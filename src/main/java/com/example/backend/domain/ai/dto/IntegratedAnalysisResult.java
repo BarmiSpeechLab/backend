@@ -15,7 +15,11 @@ import java.util.Objects;
 public class IntegratedAnalysisResult {
 
     private String taskId;
+    
+    @Builder.Default
     private String status = "PROCESSING";
+    
+    private String error;  // 에러 메시지
 
     // 결과 데이터들
     private Object pronunciation;

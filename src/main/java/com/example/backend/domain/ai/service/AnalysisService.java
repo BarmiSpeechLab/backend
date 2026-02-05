@@ -72,74 +72,152 @@ public class AnalysisService {
     // AI 결과 통합 저장 서비스 메서드
     // AI -> Spring Cache
     public void saveResult(String taskId, String type, Map<String, Object> rawData) {
+        log.info("========================================");
+        log.info("[AnalysisService.saveResult 호출]");
+        log.info("[TaskID] {}", taskId);
+        log.info("[Type] {}", type);
+        log.info("[RawData] {}", rawData);
+        
         if (taskId == null) {
-            log.error("TaskId가 누락된 결과가 수신되었습니다. Type: {}", type);
+            log.error("[저장 실패] TaskId가 누락된 결과가 수신되었습니다. Type: {}", type);
             return;
         }
-        // 1. 스프링 캐시 매니저에서 껍데기(Spring Cache) 가져오기
-        org.springframework.cache.Cache springCache = cacheManager.getCache("analysis_results");
-        if (springCache == null) return;    // 동적생성금지 옵션이 켜지거나 다른 캐시매니저로 교체했을때를 대비
-
-        // 2. Caffeine Cache로 형 변환
-        // getNativeCache()는 Object를 리턴하므 (Cache)로 캐스팅해야 asMap() 사용가능
-        Cache<Object, Object> caffeineCache = (Cache<Object, Object>) springCache.getNativeCache();
-
-
-        // 2. 동시성 문제 해결을 위해 asMap().compute() 사용
-        // (RabbitMQ 리스너들이 동시에 도착해도 데이터가 안 씹히게 함)
-        caffeineCache.asMap().compute(taskId, (key, existingValue) -> {
-
-            // 기존 값이 있으면 쓰고, 없으면(null) 새로 만듦
-            IntegratedAnalysisResult report = (IntegratedAnalysisResult) existingValue;
-            if (report == null) {
-                report = new IntegratedAnalysisResult();
-                report.setTaskId(taskId);
+        
+        try {
+            // 1. 스프링 캐시 매니저에서 껍데기(Spring Cache) 가져오기
+            org.springframework.cache.Cache springCache = cacheManager.getCache("analysis_results");
+            if (springCache == null) {
+                log.error("[저장 실패] 캐시 'analysis_results'를 찾을 수 없습니다");
+                return;
             }
+            log.debug("[캐시 조회 성공] analysis_results 캐시 획득");
 
-            // 3. 타입에 따라 "해당 칸"에만 데이터 채우기 (Switch 문)
-            switch (type) {
-                case "PRON" -> report.setPronunciation(rawData);
-                case "INTON" -> report.setIntonations(rawData);
-                case "LLM" -> report.setLlmFeedback(rawData);
-            }
+            // 2. Caffeine Cache로 형 변환
+            Cache<Object, Object> caffeineCache = (Cache<Object, Object>) springCache.getNativeCache();
+            log.debug("[Caffeine Cache 변환 완료]");
 
-            return report; // 업데이트된 객체 리턴 (캐시에 자동 저장됨)
-        });
+            // 3. 동시성 문제 해결을 위해 asMap().compute() 사용
+            caffeineCache.asMap().compute(taskId, (key, existingValue) -> {
+                log.debug("[캐시 업데이트 시작] taskId={}, 기존값 존재={}", taskId, existingValue != null);
 
-        log.info("데이터 병합 완료 [Type: {}] TaskId: {}", type, taskId);
+                // 기존 값이 있으면 쓰고, 없으면(null) 새로 만듦
+                IntegratedAnalysisResult report = (IntegratedAnalysisResult) existingValue;
+                if (report == null) {
+                    log.info("[새 리포트 생성] taskId={}", taskId);
+                    report = new IntegratedAnalysisResult();
+                    report.setTaskId(taskId);
+                } else {
+                    log.info("[기존 리포트 업데이트] taskId={}", taskId);
+                    logCurrentReportStatus(report);
+                }
+
+                // 4. 타입에 따라 "해당 칸"에만 데이터 채우기
+                switch (type) {
+                    case "PRON" -> {
+                        report.setPronunciation(rawData);
+                        log.info("[PRON 데이터 저장] taskId={}", taskId);
+                    }
+                    case "INTON" -> {
+                        report.setIntonations(rawData);
+                        log.info("[INTON 데이터 저장] taskId={}", taskId);
+                    }
+                    case "LLM" -> {
+                        report.setLlmFeedback(rawData);
+                        log.info("[LLM 데이터 저장] taskId={}", taskId);
+                    }
+                    case "ERROR" -> {
+                        report.setStatus("ERROR");
+                        report.setError(String.valueOf(rawData.get("error")));
+                        log.error("[ERROR 상태 저장] taskId={}, error={}", taskId, rawData.get("error"));
+                    }
+                }
+
+                // 업데이트 후 상태 로깅
+                logCurrentReportStatus(report);
+                return report; // 업데이트된 객체 리턴 (캐시에 자동 저장됨)
+            });
+
+            log.info("[데이터 병합 완료] Type={}, TaskId={}", type, taskId);
+            
+        } catch (Exception e) {
+            log.error("[저장 중 예외 발생] taskId={}, type={}", taskId, type, e);
+            log.error("[예외 상세] 메시지={}, rawData={}", e.getMessage(), rawData);
+        }
+        
+        log.info("========================================");
+    }
+    
+    /**
+     * 현재 리포트 상태를 로깅하는 헬퍼 메서드
+     */
+    private void logCurrentReportStatus(IntegratedAnalysisResult report) {
+        log.debug("[리포트 상태] taskId={}, PRON={}, INTON={}, LLM={}, Status={}", 
+            report.getTaskId(),
+            report.getPronunciation() != null ? "완료" : "대기중",
+            report.getIntonations() != null ? "완료" : "대기중",
+            report.getLlmFeedback() != null ? "완료" : "대기중",
+            report.getStatus()
+        );
     }
     // 조회 메서드
     @Transactional
     public IntegratedAnalysisResult getResult(Long userId, String taskId, Long curriculumId) {
+        log.info("[AnalysisService.getResult 호출] userId={}, taskId={}, curriculumId={}", userId, taskId, curriculumId);
+        
         // 1. 캐시 가져오기
         org.springframework.cache.Cache cache = cacheManager.getCache("analysis_results");
         if (cache == null) {
-            // 캐시 시스템 문제 시 PROCESSING 상태 반환
+            log.warn("[캐시 없음] analysis_results 캐시를 찾을 수 없습니다. PROCESSING 반환");
             return createProcessingResult(taskId);
         }
 
         // 2. TaskId로 데이터 조회
         IntegratedAnalysisResult result = cache.get(taskId, IntegratedAnalysisResult.class);
         if (result == null) {
-            // 아직 분석이 시작되지 않았거나 진행 중
+            log.info("[캐시 미스] taskId={}에 대한 결과가 아직 캐시에 없습니다. PROCESSING 반환", taskId);
             return createProcessingResult(taskId);
         }
         
+        log.info("[캐시 히트] taskId={} 데이터 조회 성공", taskId);
+        logCurrentReportStatus(result);
+        
         if ("ERROR".equals(result.getStatus())) {
-            // 에러 발생 시 캐시 삭제 후 에러 결과 반환
+            log.error("[에러 상태 감지] taskId={}, error={}", taskId, result.getError());
             cache.evict(taskId);
+            log.info("[캐시 삭제] 에러 결과 캐시 제거 완료");
             return result;
         }
         
         // 분석 완료 체크 (세 가지 결과가 모두 도착했는지)
-        if (isAnalysisComplete(result)){
-            User user = userRepository.findById(userId).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-            Curriculum curriculum = curriculumRepository.findById(curriculumId).orElseThrow(() -> new CustomException(ErrorCode.EXPRESSION_NOT_FOUND));
+        boolean isComplete = isAnalysisComplete(result);
+        log.info("[완료 상태 체크] taskId={}, 완료={}", taskId, isComplete);
+        
+        if (isComplete) {
+            log.info("[분석 완료] taskId={} - DB 저장 시작", taskId);
             
-            // DB 업데이트
-            saveToDatabase(user, result, curriculum);
-            cache.evict(taskId);    // DB 저장 후 캐시 삭제
-            result.setStatus("SUCCESS"); // 클라이언트에게 최종 완료 알림
+            try {
+                User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+                Curriculum curriculum = curriculumRepository.findById(curriculumId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.EXPRESSION_NOT_FOUND));
+                
+                log.info("[DB 저장] user={}, curriculum={}", user.getNickname(), curriculum.getId());
+                
+                // DB 업데이트
+                saveToDatabase(user, result, curriculum);
+                
+                cache.evict(taskId);
+                log.info("[캐시 삭제] DB 저장 완료 후 캐시 제거");
+                
+                result.setStatus("SUCCESS");
+                log.info("[최종 상태] taskId={} - SUCCESS", taskId);
+                
+            } catch (Exception e) {
+                log.error("[DB 저장 실패] taskId={}", taskId, e);
+                throw e;
+            }
+        } else {
+            log.info("[분석 진행중] taskId={} - 일부 결과만 도착함", taskId);
         }
         
         return result;
@@ -152,6 +230,7 @@ public class AnalysisService {
         IntegratedAnalysisResult result = new IntegratedAnalysisResult();
         result.setTaskId(taskId);
         result.setStatus("PROCESSING");
+        log.debug("[PROCESSING 객체 생성] taskId={}", taskId);
         return result;
     }
     private boolean isAnalysisComplete(IntegratedAnalysisResult result) {
