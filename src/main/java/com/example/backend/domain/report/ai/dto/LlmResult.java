@@ -12,7 +12,7 @@ public class LlmResult {
     /** 실제 AI가 생성한 리포트 텍스트 */
     private String content;
 
-    /** 사용한 LLM 종류 (openai / claude) */
+    /** 사용한 LLM 종류 */
     private String provider;
 
     /** 토큰 사용량 (선택, 나중에 확장용) */

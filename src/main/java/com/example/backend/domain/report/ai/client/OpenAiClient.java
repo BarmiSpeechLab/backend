@@ -26,22 +26,10 @@ public class OpenAiClient {
     private final RestTemplate restTemplate = new RestTemplate();
 
     public String generate(String prompt) {
-        // [범인 색출 로그] 실제 자바가 인식하는 키 값 확인
-        log.info("========================================");
-        log.info("🔑 [KEY CHECK] 키 길이: {}", apiKey.length());
-        if (apiKey.length() > 5) {
-            log.info("🔑 [KEY CHECK] 앞 4자리: [{}]", apiKey.substring(0, 4));
-            log.info("🔑 [KEY CHECK] 뒤 4자리: [{}]", apiKey.substring(apiKey.length() - 4));
-        } else {
-            log.info("🔑 [KEY CHECK] 전체 값: [{}]", apiKey);
-        }
-        log.info("========================================");
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         
-        // [중요] setBearerAuth는 자동으로 앞에 "Bearer "를 붙입니다.
-        // 만약 키 값 자체에 "Bearer "가 포함되어 있다면 "Bearer Bearer sk-..."가 되어 401 에러가 납니다.
         headers.setBearerAuth(apiKey); 
 
         Map<String, Object> body = Map.of(
