@@ -155,19 +155,28 @@ public class MeetingService {
     }
 
     // 특정 튜티의 예약된 일정을 반환
-    public List<MeetingResponse> findReservedMeetings(Long userId, Role role) {
-        List<Meeting> meetings;
-        // Enum을 이용한 역할 분기
-        if (role == Role.TUTOR) {
-            // 내가 튜터인 미팅 조회
-            meetings = meetingRepository.findByTutorId(userId);
-        } else if (role == Role.USER) {
-            // 내가 튜티인 미팅 조회
-            meetings = meetingRepository.findByTuteeId(userId);
-        } else {
-            // 권한이 없거나 잘못된 접근일 경우 예외 처리
-            throw new CustomException(ErrorCode.INVALID_TOKEN);
-        }
+    public List<MeetingResponse> findReservedMeetings(Long userId) {
+        List<Meeting> meetings = meetingRepository.findByTuteeId(userId);
+
+        return meetings.stream()
+                .map(meeting->MeetingResponse.builder()
+                        .id(meeting.getId())
+                        .datetime(meeting.getDatetime())
+                        .isClosed(meeting.isClosed())
+                        .tutorId(meeting.getTutor().getId())
+                        .tutorNickname(meeting.getTutor().getNickname())
+                        .tuteeId(meeting.getTutee()!=null?meeting.getTutee().getId():null)
+                        .tuteeNickname(meeting.getTutee() != null ? meeting.getTutee().getNickname() : null)
+                        .roomId(meeting.getRoomId())
+                        .build())
+                .collect(Collectors.toList());
+
+    }
+
+    // 특정 튜티의 예약된 일정을 반환
+    public List<MeetingResponse> findCreatedMeetings(Long userId) {
+        List<Meeting> meetings = meetingRepository.findByTutorId(userId);
+
         return meetings.stream()
                 .map(meeting->MeetingResponse.builder()
                         .id(meeting.getId())
