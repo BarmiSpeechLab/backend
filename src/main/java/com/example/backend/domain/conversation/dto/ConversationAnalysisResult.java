@@ -16,6 +16,8 @@ import lombok.NoArgsConstructor;
 public class ConversationAnalysisResult {
     
     private String taskId;
+    
+    @Builder.Default
     private String status = "PROCESSING"; // PROCESSING, SUCCESS, ERROR
     
     // AI 분석 결과 (구조화된 타입)
