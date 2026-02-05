@@ -72,7 +72,6 @@ public class MeetingController {
 
         } catch (Exception e) {
             log.error("세션 생성 중 에러 발생", e);
-            log.error("세션 생성 중 에러 발생", e);
             return ResponseEntity.status(500).body(null);
         }
     }    
