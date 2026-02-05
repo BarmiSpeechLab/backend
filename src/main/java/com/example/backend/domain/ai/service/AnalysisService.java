@@ -4,10 +4,16 @@ import com.example.backend.domain.ai.dto.IntegratedAnalysisResult;
 import com.example.backend.domain.ai.producer.AiClient;
 import com.example.backend.domain.curriculum.entity.Curriculum;
 import com.example.backend.domain.curriculum.entity.CurriculumStats;
+import com.example.backend.domain.curriculum.entity.Ipa;
 import com.example.backend.domain.curriculum.repository.CurriculumRepository;
 import com.example.backend.domain.curriculum.repository.CurriculumStatsRepository;
+import com.example.backend.domain.curriculum.repository.IpaRepository;
+import com.example.backend.domain.curriculum.service.CurriculumService;
+import com.example.backend.domain.curriculum.service.IpaCacheService;
 import com.example.backend.domain.report.entity.DailyStudyLog;
+import com.example.backend.domain.report.entity.UserIpaStats;
 import com.example.backend.domain.report.repository.DailyStudyLogRepository;
+import com.example.backend.domain.report.repository.UserIpaStatsRepository;
 import com.example.backend.domain.user.entity.User;
 import com.example.backend.domain.user.repository.UserRepository;
 import com.example.backend.global.exception.CustomException;
@@ -36,9 +42,12 @@ public class AnalysisService {
     private final CacheManager cacheManager;
     private final CurriculumRepository curriculumRepository;
     private final CurriculumStatsRepository curriculumStatsRepository;
+    private final CurriculumService curriculumService;
     private final DailyStudyLogRepository dailyStudyLogRepository;
     private final UserRepository userRepository;
-    private final ObjectMapper objectMapper;
+    private final IpaRepository ipaRepository;
+    private final UserIpaStatsRepository userIpaStatsRepository;
+    private final IpaCacheService ipaCacheService;  // IPA 캐시 서비스
 
     // 분석 요청 서비스 메서드
     // request -> AI
@@ -242,34 +251,124 @@ public class AnalysisService {
     // DB 저장 로직 분리
     @Transactional
     public void saveToDatabase(User user, IntegratedAnalysisResult result, Curriculum curriculum) {
-        /// 1. 점수 추출 (안전한 타입 변환 로직 적용)
-        // Map에서 "score"를 가져오되, Integer/Double/String 모든 경우를 대비합니다.
-        int score = 0;
-        if (result.getPronunciation() instanceof Map<?, ?> pronMap) {
-            Object scoreObj = pronMap.get("score");
-            score = convertToInteger(scoreObj);
-        }
+        log.info("[DB 저장 시작] user={}, curriculum={}", user.getNickname(), curriculum.getId());
+        
+        // 1. ✅ error_rate, error_level, score 추출
+        int[] metrics = extractErrorMetrics(result);
+        int score = metrics[0];           // score (0-100)
+        int errorRatePercent = metrics[1]; // error_rate를 퍼센트로 (0-100)
+        int errorLevel = metrics[2];       // error_level (0-2)
+        
+        double errorRate = errorRatePercent / 100.0;  // 다시 0.0~1.0 범위로
+        
+        log.info("[메트릭 추출 완료] score={}, errorRate={}, errorLevel={}", 
+                score, errorRatePercent, errorLevel);
+        
         // 2. CurriculumStats (커리큘럼별 최고기록/완료여부) 업데이트
         CurriculumStats stats = curriculumStatsRepository.findByUserAndCurriculumId(user, curriculum.getId())
                 .orElseGet(() -> CurriculumStats
                         .builder()
                         .curriculum(curriculum)
                         .user(user)
-                        .score(0)   // 초기 점수 세팅
+                        .score(0)
+                        .tryCount(0)
                         .build());
 
-        stats.updateScore(score);   // 기존 점수보다 높으면 갱신하는 로직
+        stats.updateScore(score);       // 점수 업데이트 (최고 점수만 저장)
+        stats.increaseTryCount();        // 시도 횟수 증가
+        stats.updateErrorMetrics(errorRate, errorLevel);  // ✅ error_rate, error_level 저장
         curriculumStatsRepository.save(stats);
+        log.info("[CurriculumStats 저장] tryCount={}, score={}, errorRate={}, errorLevel={}", 
+                stats.getTryCount(), stats.getScore(), stats.getErrorRate(), stats.getErrorLevel());
 
-        // 3. DailyStudyLog (일일 학습량) 업데이트
+        // ✅ 3. UserIpaStats (IPA별 통계) 업데이트
+        updateUserIpaStats(user, result);
+
+        // 4. DailyStudyLog (일일 학습량) 업데이트
         DailyStudyLog todayLog = dailyStudyLogRepository.findByUserAndDate(user, LocalDate.now())
-                .orElseGet(() -> {
-                    DailyStudyLog newLog = new DailyStudyLog(user, LocalDate.now());
-                    return dailyStudyLogRepository.save(newLog); // 신규 생성 시 즉시 저장
-                });
+                .orElseGet(() -> DailyStudyLog.builder()
+                        .user(user)
+                        .date(LocalDate.now())
+                        .feedbackCount(0)
+                        .build());
+        
         todayLog.increaseFeedbackCount();
-        dailyStudyLogRepository.save(todayLog); // @Transactional이 있으므로 dirty checking에 의해 저절로 업데이트 되긴 함
-        log.info("DB 저장 완료: User={}, Score={}, Curriculum={}", user.getNickname(), score, curriculum.getId());
+        dailyStudyLogRepository.save(todayLog);
+        
+        log.info("[DB 저장 완료] User={}, Score={}, ErrorRate={}, ErrorLevel={}, TryCount={}, Curriculum={}", 
+                user.getNickname(), score, errorRate, errorLevel, stats.getTryCount(), curriculum.getId());
+    }
+
+    /**
+     * AI 분석 결과에서 error_rate와 error_level을 추출하는 메서드
+     * @return [score, errorRate (0.43 → 43), errorLevel]
+     */
+    private int[] extractErrorMetrics(IntegratedAnalysisResult result) {
+        if (!(result.getPronunciation() instanceof Map<?, ?> pronMap)) {
+            log.warn("[Error 추출 실패] pronunciation이 Map 타입이 아님");
+            return new int[]{0, 0, 0};
+        }
+
+        // 실제 AI 응답은 snake_case (analysis_result)
+        Object analysisResultObj = pronMap.get("analysis_result");
+        
+        // analysis_result가 List인지 확인
+        if (!(analysisResultObj instanceof List<?> analysisList) || analysisList.isEmpty()) {
+            log.warn("[Error 추출 실패] analysis_result가 비어있거나 List 타입이 아님");
+            return new int[]{0, 0, 0};
+        }
+
+        double totalErrorRate = 0.0;
+        int totalErrorLevel = 0;
+        int count = 0;
+
+        // 각 단어별 error_rate와 error_level 누적
+        for (Object item : analysisList) {
+            if (item instanceof Map<?, ?> itemMap) {
+                Object errorRateObj = itemMap.get("error_rate");
+                Object errorLevelObj = itemMap.get("error_level");
+                
+                if (errorRateObj != null) {
+                    double errorRate = 0.0;
+                    if (errorRateObj instanceof Number) {
+                        errorRate = ((Number) errorRateObj).doubleValue();
+                    } else {
+                        try {
+                            errorRate = Double.parseDouble(String.valueOf(errorRateObj));
+                        } catch (NumberFormatException e) {
+                            log.warn("[error_rate 파싱 실패] value={}", errorRateObj);
+                        }
+                    }
+                    
+                    int errorLevel = convertToInteger(errorLevelObj);
+                    
+                    totalErrorRate += errorRate;
+                    totalErrorLevel += errorLevel;
+                    count++;
+                    
+                    log.debug("[Error 추출] word={}, error_rate={}, error_level={}", 
+                            itemMap.get("word"), errorRate, errorLevel);
+                }
+            }
+        }
+
+        if (count == 0) {
+            log.warn("[Error 추출 실패] 유효한 error 데이터가 없음");
+            return new int[]{0, 0, 0};
+        }
+
+        double avgErrorRate = totalErrorRate / count;  // 0.0 ~ 1.0 (또는 1.0 초과 가능)
+        int avgErrorLevel = totalErrorLevel / count;    // 0 ~ 3
+        
+        // ✅ error_rate > 1.0인 경우 음수 방지 (0점 처리)
+        int avgScore = Math.max(0, (int) ((1.0 - avgErrorRate) * 100));
+        
+        int errorRatePercent = (int) (avgErrorRate * 100);  // 0.43 → 43
+        
+        log.info("[Error 메트릭 계산] avgErrorRate={}, avgErrorLevel={}, avgScore={}", 
+                avgErrorRate, avgErrorLevel, avgScore);
+        
+        return new int[]{avgScore, errorRatePercent, avgErrorLevel};
     }
 
     /**
@@ -279,10 +378,117 @@ public class AnalysisService {
         if (obj == null) return 0;
         if (obj instanceof Number number) return number.intValue();
         try {
-            return Integer.parseInt(String.valueOf(obj));
+            return Integer.parseInt(obj.toString());
         } catch (NumberFormatException e) {
-            log.warn("점수 파싱 실패: {}", obj);
+            log.warn("[타입 변환 실패] obj={}, error={}", obj, e.getMessage());
             return 0;
         }
+    }
+
+    /**
+     * AI 분석 결과에서 phoneme 데이터를 추출하여 UserIpaStats 업데이트
+     */
+    private void updateUserIpaStats(User user, IntegratedAnalysisResult result) {
+        if (!(result.getPronunciation() instanceof Map<?, ?> pronMap)) {
+            log.warn("[IPA 통계 업데이트 건너뜀] pronunciation이 Map 타입이 아님");
+            return;
+        }
+
+        // 실제 AI 응답은 snake_case (analysis_result)
+        Object analysisResultObj = pronMap.get("analysis_result");
+        if (!(analysisResultObj instanceof List<?> analysisList)) {
+            log.warn("[IPA 통계 업데이트 건너뜀] analysis_result가 List 타입이 아님");
+            return;
+        }
+
+        log.info("[IPA 통계 업데이트 시작] user={}, 단어 수={}", user.getNickname(), analysisList.size());
+
+        int updatedCount = 0;
+        int processedPhonemes = 0;
+
+        // 각 단어별로 phoneme 데이터 처리
+        for (Object item : analysisList) {
+            if (!(item instanceof Map<?, ?> itemMap)) continue;
+
+            // phonemes 배열 가져오기
+            Object phonemesObj = itemMap.get("phonemes");
+            if (!(phonemesObj instanceof List<?> phonemesList)) {
+                log.debug("[Phoneme 없음] word={}", itemMap.get("word"));
+                continue;
+            }
+
+            // 각 phoneme 처리
+            for (Object phonemeObj : phonemesList) {
+                if (!(phonemeObj instanceof Map<?, ?> phonemeMap)) continue;
+
+                processedPhonemes++;
+
+                // cipa (올바른 IPA 기호) 추출
+                String cipaSymbol = String.valueOf(phonemeMap.get("cipa"));
+                if (cipaSymbol == null || cipaSymbol.equals("null") || cipaSymbol.isEmpty()) {
+                    log.debug("[IPA 기호 없음] phoneme 건너뜀");
+                    continue;
+                }
+
+                // is_correct 추출
+                Boolean isCorrect = null;
+                Object isCorrectObj = phonemeMap.get("is_correct");
+                if (isCorrectObj instanceof Boolean) {
+                    isCorrect = (Boolean) isCorrectObj;
+                } else if (isCorrectObj != null) {
+                    isCorrect = Boolean.valueOf(String.valueOf(isCorrectObj));
+                }
+
+                if (isCorrect == null) {
+                    log.debug("[is_correct 없음] cipa={}", cipaSymbol);
+                    continue;
+                }
+
+                // ✅ IPA 엔티티 조회 (캐시 사용, DB 조회 없음)
+                Ipa cachedIpa = ipaCacheService.getBySymbol(cipaSymbol);
+                
+                // IPA가 캐시에 없으면 (DB에도 없으면) 생성
+                final Ipa ipa;
+                if (cachedIpa == null) {
+                    String type = String.valueOf(phonemeMap.get("type"));
+                    Ipa newIpa = Ipa.builder()
+                            .symbol(cipaSymbol)
+                            .type(type != null && !type.equals("null") ? type : "unknown")
+                            .build();
+                    ipa = ipaRepository.save(newIpa);  // DB에 저장
+                    ipaCacheService.addToCache(ipa);   // 캐시에 추가
+                    log.info("[신규 IPA 생성 및 캐시 추가] symbol={}, type={}, id={}", 
+                            cipaSymbol, type, ipa.getId());
+                } else {
+                    ipa = cachedIpa;
+                }
+
+                // UserIpaStats 조회 또는 생성
+                UserIpaStats stats = userIpaStatsRepository.findByUserAndIpa(user, ipa)
+                        .orElseGet(() -> UserIpaStats.builder()
+                                .user(user)
+                                .ipa(ipa)
+                                .totalTryCount(0)
+                                .successCount(0)
+                                .build());
+
+                // 통계 업데이트
+                if (isCorrect) {
+                    stats.incrementSuccess();  // 시도 + 성공 모두 증가
+                    log.debug("[IPA 성공] cipa={}, ipaId={}, totalTry={}, success={}",
+                            cipaSymbol, ipa.getId(), stats.getTotalTryCount(), stats.getSuccessCount());
+                } else {
+                    stats.recordFailure();  // 시도만 증가
+                    log.debug("[IPA 실패] cipa={}, ipaId={}, totalTry={}, success={}",
+                            cipaSymbol, ipa.getId(), stats.getTotalTryCount(), stats.getSuccessCount());
+                }
+
+                userIpaStatsRepository.save(stats);
+                updatedCount++;
+            }
+        }
+
+        log.info("[IPA 통계 업데이트 완료] processedPhonemes={}, updatedStats={}",
+                processedPhonemes, updatedCount);
     }
 }
