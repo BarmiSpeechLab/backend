@@ -106,7 +106,7 @@ public class MeetingController {
         return ResponseEntity.ok(ApiResponse.success(availableSlots));
     }
     @Operation(summary = "튜티 미팅 조회 API", description = "특정 튜티의 미팅 예약 일정을 반환합니다.")
-    @PreAuthorize("hasRole('TUTEE')")   // api 요청 시 튜터인지 권한 확인
+    @PreAuthorize("hasRole('USER')")   // api 요청 시 튜터인지 권한 확인
     @GetMapping("/reserved")
     public ResponseEntity<ApiResponse<java.util.List<MeetingResponse>>> getTuteeReservation(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
