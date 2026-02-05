@@ -92,7 +92,7 @@ public class MeetingService {
             ConnectionProperties properties = new ConnectionProperties.Builder().build();
             // 4. 세션(방)에 들어갈 연결(Connection) 생성 요청
             Connection connection = session.createConnection(properties);
-            // 5. 토큰 반환
+            // 5. OpenVidu가 생성한 토큰 반환
             return connection.getToken();
         } catch (OpenViduHttpException e) {
             log.error("OpenVidu 토큰 생성 중 HTTP 에러 발생: {}", e.getMessage());
