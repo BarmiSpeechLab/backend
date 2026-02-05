@@ -6,6 +6,9 @@ import com.example.backend.domain.report.dto.MyReportResponse;
 import com.example.backend.domain.report.service.ReportService;
 import com.example.backend.global.dto.ApiResponse;
 import com.example.backend.global.userdetails.CustomUserDetails;
+import com.example.backend.domain.report.ai.prompt.IpaPromptBuilder;
+import com.example.backend.domain.report.ai.service.LlmReportService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.Table;
@@ -24,6 +27,7 @@ import java.util.Map;
 public class ReportController {
 
     private final ReportService reportService;
+    private final LlmReportService llmReportService;
 
     @Operation(summary = "나의 전체 통계 조회 API",description = "특정 유저의 전체 발음학습 통계 데이터를 응답합니다.")
     @GetMapping("/my-stats")
@@ -55,5 +59,17 @@ public class ReportController {
         return ResponseEntity.ok(ApiResponse.success(
                 reportService.getIpaAnalysis(userDetails.getUserId())
         ));
+    }
+
+    @Operation(summary = "AI 학습 분석 리포트", description = "IPA 발음 통계를 기반으로 AI 분석 리포트를 제공합니다.")
+    @GetMapping("/radar-chart/ai-report")
+    public ResponseEntity<ApiResponse<String>> getIpaAiReport(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        var stats = reportService.getIpaAnalysis(userDetails.getUserId());
+        String prompt = IpaPromptBuilder.build(stats);
+        String aiReport = llmReportService.generateIpaReport(prompt);
+
+        return ResponseEntity.ok(ApiResponse.success(aiReport));
     }
 }
