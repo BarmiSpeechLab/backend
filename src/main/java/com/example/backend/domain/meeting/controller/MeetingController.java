@@ -100,11 +100,20 @@ public class MeetingController {
         java.util.List<MeetingResponse> availableSlots = meetingService.findAvailableSlots(tutorId);
         return ResponseEntity.ok(ApiResponse.success(availableSlots));
     }
-    @Operation(summary = "튜티 예약 조회 API", description = "특정 튜티의 미팅 예약 일정을 반환합니다.")
+    @Operation(summary = "튜티 미팅 조회 API", description = "특정 튜티의 미팅 예약 일정을 반환합니다.")
+    @PreAuthorize("hasRole('TUTEE')")   // api 요청 시 튜터인지 권한 확인
     @GetMapping("/reserved")
-    public ResponseEntity<ApiResponse<java.util.List<MeetingResponse>>> getMyReservation(
+    public ResponseEntity<ApiResponse<java.util.List<MeetingResponse>>> getTuteeReservation(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         java.util.List<MeetingResponse> availableSlots = meetingService.findReservedMeetings(userDetails.getUserId());
+        return ResponseEntity.ok(ApiResponse.success(availableSlots));
+    }
+    @Operation(summary = "튜터 미팅 조회 API", description = "특정 튜터의 미팅 예약 일정을 반환합니다.")
+    @PreAuthorize("hasRole('TUTOR')")   // api 요청 시 튜터인지 권한 확인
+    @GetMapping("/tutor-meetings")
+    public ResponseEntity<ApiResponse<java.util.List<MeetingResponse>>> getTutorReservation(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        java.util.List<MeetingResponse> availableSlots = meetingService.findCreatedMeetings(userDetails.getUserId());
         return ResponseEntity.ok(ApiResponse.success(availableSlots));
     }
 }

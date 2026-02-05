@@ -3,6 +3,7 @@ package com.example.backend.domain.meeting.service;
 import com.example.backend.domain.meeting.Entity.Meeting;
 import com.example.backend.domain.meeting.dto.MeetingResponse;
 import com.example.backend.domain.meeting.repository.MeetingRepository;
+import com.example.backend.domain.user.entity.Role;
 import com.example.backend.domain.user.entity.User;
 import com.example.backend.domain.user.repository.UserRepository;
 import com.example.backend.global.exception.CustomException;
@@ -154,8 +155,28 @@ public class MeetingService {
     }
 
     // 특정 튜티의 예약된 일정을 반환
-    public List<MeetingResponse> findReservedMeetings(Long tuteeId) {
-        List<Meeting> meetings = meetingRepository.findByTuteeId(tuteeId);
+    public List<MeetingResponse> findReservedMeetings(Long userId) {
+        List<Meeting> meetings = meetingRepository.findByTuteeId(userId);
+
+        return meetings.stream()
+                .map(meeting->MeetingResponse.builder()
+                        .id(meeting.getId())
+                        .datetime(meeting.getDatetime())
+                        .isClosed(meeting.isClosed())
+                        .tutorId(meeting.getTutor().getId())
+                        .tutorNickname(meeting.getTutor().getNickname())
+                        .tuteeId(meeting.getTutee()!=null?meeting.getTutee().getId():null)
+                        .tuteeNickname(meeting.getTutee() != null ? meeting.getTutee().getNickname() : null)
+                        .roomId(meeting.getRoomId())
+                        .build())
+                .collect(Collectors.toList());
+
+    }
+
+    // 특정 튜티의 예약된 일정을 반환
+    public List<MeetingResponse> findCreatedMeetings(Long userId) {
+        List<Meeting> meetings = meetingRepository.findByTutorId(userId);
+
         return meetings.stream()
                 .map(meeting->MeetingResponse.builder()
                         .id(meeting.getId())
