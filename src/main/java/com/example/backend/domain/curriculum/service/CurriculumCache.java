@@ -49,7 +49,7 @@ public class CurriculumCache {
     public List<Curriculum> getCurriculumsByCondition(String type, String theme) {
         return allCurriculums.stream()
                 .filter(c -> c.getType().equals(type))
-                .filter(c -> c.getTheme().equals(theme))
+                .filter(c -> c.getTheme().replace(" ", "").equals(theme.replace(" ", ""))) // 공백 무시 비교
                 .collect(Collectors.toList());
     }
 
