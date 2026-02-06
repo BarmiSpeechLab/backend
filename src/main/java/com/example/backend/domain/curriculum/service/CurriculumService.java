@@ -1,6 +1,8 @@
 package com.example.backend.domain.curriculum.service;
 
+import com.example.backend.domain.curriculum.dto.CurriculumDto;
 import com.example.backend.domain.curriculum.dto.CurriculumResponse;
+import com.example.backend.domain.curriculum.dto.CurriculumStatsDto;
 import com.example.backend.domain.curriculum.entity.Curriculum;
 import com.example.backend.domain.curriculum.entity.CurriculumStats;
 import com.example.backend.domain.curriculum.repository.CurriculumRepository;
@@ -10,6 +12,8 @@ import com.example.backend.domain.user.repository.UserRepository;
 import com.example.backend.global.exception.CustomException;
 import com.example.backend.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,13 +36,8 @@ public class CurriculumService {
         // 2. 전체 커리큘럼 조회 (DB가 아닌 메모리 조회)
         List<Curriculum> allCurriculums = curriculumCache.getCurriculumsByCondition(type, theme);
 
-        // 3. 내 기록 조회 (Map으로 변환하여 검색 속도 O(1)로 최적화)
-        // Key: 커리큘럼 ID, Value: 기록객체
-        Map<Long, CurriculumStats> myStatsMap = curriculumStatsRepository.findAllByUser(user).stream()
-                .collect(Collectors.toMap(
-                        stat -> stat.getCurriculum().getId(),   // key
-                        stat -> stat                            // value
-                ));
+        // 3. 내 기록 조회 (@Cacheable로 캐싱 - 동일 유저의 반복 조회 최적화)
+        Map<Long, CurriculumStats> myStatsMap = getUserStatsMap(user);
 
         // 4. 병합
         return allCurriculums.stream()
@@ -70,4 +69,49 @@ public class CurriculumService {
         // 4. DTO 변환
         return CurriculumResponse.of(curriculum, stats);
     }
+
+    // =================================================================
+    // 학습 통계 조회 (캐싱 없음)
+    // =================================================================
+
+    /**
+     * ✅ 사용자별 학습 통계를 Map으로 반환 (캐싱 제거)
+     * - UserStats는 자주 변경되므로 매번 최신 데이터 조회
+     * - key: userId, value: Map<커리큘럼ID, 통계>
+     */
+    public Map<Long, CurriculumStats> getUserStatsMap(User user) {
+        return curriculumStatsRepository.findAllByUser(user).stream()
+                .collect(Collectors.toMap(
+                        stat -> stat.getCurriculum().getId(),   // key
+                        stat -> stat                            // value
+                ));
+    }
+
+    // =================================================================
+    // ✅ API 분리: Curriculum (정적) vs Stats (동적)
+    // =================================================================
+
+    /**
+     * 커리큘럼 목록 조회 (Stats 없음, 정적 데이터만)
+     * - 프론트엔드에서 장기 캐싱 가능
+     */
+    public List<CurriculumDto> getCurriculumListWithoutStats(String type, String theme) {
+        return curriculumCache.getCurriculumsByCondition(type, theme).stream()
+                .map(CurriculumDto::from)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 사용자별 통계만 조회 (동적 데이터)
+     * - 매번 최신 데이터 조회
+     */
+    public List<CurriculumStatsDto> getUserStats(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
+        
+        return curriculumStatsRepository.findAllByUser(user).stream()
+                .map(CurriculumStatsDto::from)
+                .collect(Collectors.toList());
+    }
 }
+

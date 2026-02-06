@@ -35,6 +35,15 @@ public class CacheConfig {
                         .build()
         );
 
+        // 3. 커리큘럼 통계 캐시 등록 (사용자별 학습 기록)
+        cacheManager.registerCustomCache("curriculum_stats",
+                Caffeine.newBuilder()
+                        .expireAfterWrite(30, TimeUnit.MINUTES) // 30분 캐시
+                        .maximumSize(5000) // 최대 5000명 유저
+                        .recordStats()
+                        .build()
+        );
+
         return cacheManager;
     }
 }

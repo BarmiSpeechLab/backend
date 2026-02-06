@@ -25,5 +25,29 @@ public class UserIpaStats extends BaseTimeEntity {
 
     private Integer totalTryCount;
     private Integer successCount;
+
+    // ✅ 시도 횟수 증가
+    public void incrementTry() {
+        if (this.totalTryCount == null) {
+            this.totalTryCount = 1;
+        } else {
+            this.totalTryCount++;
+        }
+    }
+
+    // ✅ 성공 횟수 증가 (시도도 함께 증가)
+    public void incrementSuccess() {
+        incrementTry();  // 시도도 함께 증가
+        if (this.successCount == null) {
+            this.successCount = 1;
+        } else {
+            this.successCount++;
+        }
+    }
+
+    // ✅ 실패 기록 (시도만 증가)
+    public void recordFailure() {
+        incrementTry();
+    }
 }
 
