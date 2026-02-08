@@ -48,14 +48,14 @@ public class CurriculumStats {
         }
     }
 
-    // ✅ error_rate와 error_level 업데이트 (최신 값으로 덮어쓰기)
+    // error_rate와 error_level 업데이트 (최신 값으로 덮어쓰기)
     public void updateErrorMetrics(Double errorRate, Integer errorLevel) {
         this.errorRate = errorRate;
         this.errorLevel = errorLevel;
     }
 
     /**
-     * ✅ grade 계산 (error_level 기반)
+     * grade 계산 (error_level 기반)
      * @return Grade (1=Perfect ~ 4=Try Again)
      */
     public Grade getGrade() {
@@ -63,7 +63,7 @@ public class CurriculumStats {
     }
 
     /**
-     * ✅ grade level 반환 (숫자)
+     * grade level 반환 (숫자)
      * @return 1~4
      */
     public int getGradeLevel() {

@@ -17,5 +17,10 @@ public class Ipa {
 
     private String symbol; // 발음 기호 (예: æ, ŋ)
 
-    private String type;   // VOWEL, CONSONANT (Enum으로 해도 됨)
+    private String type;   // vowel, plosive, fricative 등
+
+    // ✅ 데이터 보정을 위한 명시적 메서드
+    public void updateType(String type) {
+        this.type = type;
+    }
 }

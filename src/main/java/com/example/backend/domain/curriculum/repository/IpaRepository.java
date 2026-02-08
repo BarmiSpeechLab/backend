@@ -9,6 +9,6 @@ import java.util.Optional;
 @Repository
 public interface IpaRepository extends JpaRepository<Ipa, Long> {
     
-    // ✅ IPA 기호로 조회
+    // IPA 기호로 조회
     Optional<Ipa> findBySymbol(String symbol);
 }

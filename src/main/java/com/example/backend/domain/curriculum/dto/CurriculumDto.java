@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * ✅ 커리큘럼 정적 정보 (Stats 제외)
+ * 커리큘럼 정적 정보 (Stats 제외)
  * - 한 번 로드 후 프론트엔드에서 장기 캐싱
  */
 @Getter

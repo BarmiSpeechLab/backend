@@ -12,7 +12,7 @@ import java.util.Optional;
 
 public interface CurriculumStatsRepository extends JpaRepository<CurriculumStats, Long> {
     // 1. 특정 유저의 모든 학습 기록 조회
-    // ✅ N+1 문제 해결: curriculum을 함께 fetch (JOIN FETCH)
+    // N+1 문제 해결: curriculum을 함께 fetch (JOIN FETCH)
     @EntityGraph(attributePaths = {"curriculum"})
     List<CurriculumStats> findAllByUser(User user);
 

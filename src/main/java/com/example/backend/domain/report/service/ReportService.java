@@ -82,9 +82,8 @@ public class ReportService {
     * */
     public Map<String, Map<String, IpaStatDto>> getIpaAnalysis(Long userId) {
 
-        // 1. DB에서 데이터 조회 (아까 수정한 메서드 사용! 에러 X)
-        // 많이 시도했다는 건 그만큼 취약하다는 뜻으로 간주 -> Top 5 추출
-        List<UserIpaStats> statsList = userIpaStatsRepository.findTop5ByUser_IdOrderByTotalTryCountDesc(userId);
+        // 1. DB에서 데이터 조회 (전체 조회로 변경하여 레이더 차트 모든 카테고리 채움)
+        List<UserIpaStats> statsList = userIpaStatsRepository.findAllByUserId(userId);
 
         // 2. 이중 Map 구조로 변환 (Stream API)
         // 중복된 IPA symbol이 있을 경우 합산

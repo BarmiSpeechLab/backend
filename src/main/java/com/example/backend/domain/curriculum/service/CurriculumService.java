@@ -75,10 +75,16 @@ public class CurriculumService {
     // =================================================================
 
     /**
-     * ✅ 사용자별 학습 통계를 Map으로 반환 (캐싱 제거)
+     * 사용자별 학습 통계를 Map으로 반환 (캐싱 제거)
      * - UserStats는 자주 변경되므로 매번 최신 데이터 조회
      * - key: userId, value: Map<커리큘럼ID, 통계>
      */
+    /**
+     *  사용자별 학습 통계를 Map으로 반환 (캐싱 적용)
+     * - 기본적으로 캐시에서 조회 (@Cacheable)
+     * - 학습 완료 시 AsyncStatsCacheService가 갱신해줌 (@CachePut)
+     */
+    @Cacheable(value = "curriculum_stats", key = "#user.id")
     public Map<Long, CurriculumStats> getUserStatsMap(User user) {
         return curriculumStatsRepository.findAllByUser(user).stream()
                 .collect(Collectors.toMap(
@@ -88,7 +94,7 @@ public class CurriculumService {
     }
 
     // =================================================================
-    // ✅ API 분리: Curriculum (정적) vs Stats (동적)
+    // API 분리: Curriculum (정적) vs Stats (동적)
     // =================================================================
 
     /**
@@ -109,7 +115,8 @@ public class CurriculumService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
         
-        return curriculumStatsRepository.findAllByUser(user).stream()
+        // 캐시된 Map을 사용하여 DB 조회 방지
+        return getUserStatsMap(user).values().stream()
                 .map(CurriculumStatsDto::from)
                 .collect(Collectors.toList());
     }

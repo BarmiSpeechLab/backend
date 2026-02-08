@@ -22,9 +22,9 @@ public class CurriculumResponse {
     private boolean isCompleted;
     private Integer score;
     private Integer tryCount;
-    private Double errorRate;    // ✅ 오답률
-    private Integer errorLevel;  // ✅ 오답 레벨
-    private Integer grade;       // ✅ 등급 (1=Perfect ~ 4=Try Again)
+    private Double errorRate;    // 오답률
+    private Integer errorLevel;  // 오답 레벨
+    private Integer grade;       // 등급 (1=Perfect ~ 4=Try Again)
 
     public static CurriculumResponse of(Curriculum curriculum, CurriculumStats stats) {
         boolean hasStats = (stats != null);
@@ -43,7 +43,7 @@ public class CurriculumResponse {
                 .tryCount(hasStats ? stats.getTryCount() : 0)
                 .errorRate(hasStats ? stats.getErrorRate() : null)
                 .errorLevel(hasStats ? stats.getErrorLevel() : null)
-                .grade(hasStats ? stats.getGradeLevel() : null)  // ✅ grade 추가
+                .grade(hasStats ? stats.getGradeLevel() : null)  // grade 추가
                 .build();
     }
 }
