@@ -1,6 +1,7 @@
 package com.example.backend.domain.report.controller;
 
 import com.example.backend.domain.report.dto.CalendarLogResponse;
+import com.example.backend.domain.report.dto.IpaAnalysisResponse;
 import com.example.backend.domain.report.dto.IpaStatDto;
 import com.example.backend.domain.report.dto.MyReportResponse;
 import com.example.backend.domain.report.service.ReportService;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.Table;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -61,14 +63,41 @@ public class ReportController {
         ));
     }
 
-    @Operation(summary = "AI 학습 분석 리포트", description = "IPA 발음 통계를 기반으로 AI 분석 리포트를 제공합니다.")
+    @Operation(summary = "튜터 전용 타겟 학생 IPA 정답률 조회 API", description = "튜터가 학생의 발음 정답률 데이터를 조회합니다.")
+    @GetMapping("/radar-chart/{tuteeId}")
+    @PreAuthorize("hasRole('TUTOR') or #userDetails.userId == #tuteeId")
+    public ResponseEntity<ApiResponse<Map<String, Map<String, IpaStatDto>>>> getStudentIpaStats(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long tuteeId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                reportService.getIpaAnalysis(tuteeId)
+        ));
+    }
+
+    @Operation(summary = "나의 AI 학습 분석 리포트", description = "자신의 IPA 발음 통계를 기반으로 AI 분석 리포트를 제공합니다.")
     @GetMapping("/radar-chart/ai-report")
-    public ResponseEntity<ApiResponse<String>> getIpaAiReport(
+    public ResponseEntity<ApiResponse<String>> getMyIpaAiReport(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         var stats = reportService.getIpaAnalysis(userDetails.getUserId());
         String prompt = IpaPromptBuilder.build(stats);
-        String aiReport = llmReportService.generateIpaReport(prompt);
+        String aiReport = llmReportService.generateIpaReportRaw(prompt);
+
+        return ResponseEntity.ok(ApiResponse.success(aiReport));
+    }
+
+    @Operation(summary = "튜터 전용 학생 AI 학습 분석 리포트")
+    @GetMapping("/radar-chart/ai-report/{tuteeId}")
+    @PreAuthorize("hasRole('TUTOR') or #userDetails.userId == #tuteeId")
+    public ResponseEntity<ApiResponse<IpaAnalysisResponse>> getStudentIpaAiReport(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long tuteeId
+    ) {
+        var stats = reportService.getIpaAnalysis(tuteeId);
+        String prompt = IpaPromptBuilder.build(stats);
+
+        IpaAnalysisResponse aiReport = llmReportService.generateIpaReportDto(prompt);
 
         return ResponseEntity.ok(ApiResponse.success(aiReport));
     }
