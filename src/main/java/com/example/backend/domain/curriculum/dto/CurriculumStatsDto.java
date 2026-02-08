@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * ✅ 사용자별 커리큘럼 통계 (동적 데이터)
+ * 사용자별 커리큘럼 통계 (동적 데이터)
  * - 매번 조회하여 최신 데이터 제공
  */
 @Getter
