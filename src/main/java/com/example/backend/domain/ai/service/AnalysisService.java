@@ -10,6 +10,7 @@ import com.example.backend.domain.curriculum.repository.CurriculumStatsRepositor
 import com.example.backend.domain.curriculum.repository.IpaRepository;
 import com.example.backend.domain.curriculum.service.CurriculumService;
 import com.example.backend.domain.curriculum.service.IpaCacheService;
+import com.example.backend.domain.curriculum.service.AsyncStatsCacheService;
 import com.example.backend.domain.report.entity.DailyStudyLog;
 import com.example.backend.domain.report.entity.UserIpaStats;
 import com.example.backend.domain.report.repository.DailyStudyLogRepository;
@@ -28,6 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -48,6 +51,7 @@ public class AnalysisService {
     private final IpaRepository ipaRepository;
     private final UserIpaStatsRepository userIpaStatsRepository;
     private final IpaCacheService ipaCacheService;  // IPA 캐시 서비스
+    private final AsyncStatsCacheService asyncStatsCacheService; // 비동기 캐시 서비스 주입
 
     // 분석 요청 서비스 메서드
     // request -> AI
@@ -215,6 +219,14 @@ public class AnalysisService {
                 // DB 업데이트
                 saveToDatabase(user, result, curriculum);
                 
+                // 비동기 캐시 갱신 (트랜잭션 커밋 완료 후 실행)
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        asyncStatsCacheService.refreshUserStats(user.getId());
+                    }
+                });
+                
                 cache.evict(taskId);
                 log.info("[캐시 삭제] DB 저장 완료 후 캐시 제거");
                 
@@ -253,7 +265,7 @@ public class AnalysisService {
     public void saveToDatabase(User user, IntegratedAnalysisResult result, Curriculum curriculum) {
         log.info("[DB 저장 시작] user={}, curriculum={}", user.getNickname(), curriculum.getId());
         
-        // 1. ✅ error_rate, error_level, score 추출
+        // 1. error_rate, error_level, score 추출
         int[] metrics = extractErrorMetrics(result);
         int score = metrics[0];           // score (0-100)
         int errorRatePercent = metrics[1]; // error_rate를 퍼센트로 (0-100)
@@ -263,7 +275,7 @@ public class AnalysisService {
         
         log.info("[메트릭 추출 완료] score={}, errorRate={}, errorLevel={}", 
                 score, errorRatePercent, errorLevel);
-        
+
         // 2. CurriculumStats (커리큘럼별 최고기록/완료여부) 업데이트
         CurriculumStats stats = curriculumStatsRepository.findByUserAndCurriculumId(user, curriculum.getId())
                 .orElseGet(() -> CurriculumStats
@@ -276,12 +288,12 @@ public class AnalysisService {
 
         stats.updateScore(score);       // 점수 업데이트 (최고 점수만 저장)
         stats.increaseTryCount();        // 시도 횟수 증가
-        stats.updateErrorMetrics(errorRate, errorLevel);  // ✅ error_rate, error_level 저장
+        stats.updateErrorMetrics(errorRate, errorLevel);  // error_rate, error_level 저장
         curriculumStatsRepository.save(stats);
         log.info("[CurriculumStats 저장] tryCount={}, score={}, errorRate={}, errorLevel={}", 
                 stats.getTryCount(), stats.getScore(), stats.getErrorRate(), stats.getErrorLevel());
 
-        // ✅ 3. UserIpaStats (IPA별 통계) 업데이트
+        // 3. UserIpaStats (IPA별 통계) 업데이트
         updateUserIpaStats(user, result);
 
         // 4. DailyStudyLog (일일 학습량) 업데이트
@@ -360,7 +372,7 @@ public class AnalysisService {
         double avgErrorRate = totalErrorRate / count;  // 0.0 ~ 1.0 (또는 1.0 초과 가능)
         int avgErrorLevel = totalErrorLevel / count;    // 0 ~ 3
         
-        // ✅ error_rate > 1.0인 경우 음수 방지 (0점 처리)
+        // error_rate > 1.0인 경우 음수 방지 (0점 처리)
         int avgScore = Math.max(0, (int) ((1.0 - avgErrorRate) * 100));
         
         int errorRatePercent = (int) (avgErrorRate * 100);  // 0.43 → 43
@@ -444,7 +456,7 @@ public class AnalysisService {
                     continue;
                 }
 
-                // ✅ IPA 엔티티 조회 (캐시 사용, DB 조회 없음)
+                // `IPA 엔티티 조회 (캐시 사용, DB 조회 없음)
                 Ipa cachedIpa = ipaCacheService.getBySymbol(cipaSymbol);
                 
                 // IPA가 캐시에 없으면 (DB에도 없으면) 생성

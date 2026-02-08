@@ -43,14 +43,14 @@ public class ConversationService {
         
         // 대화 요청 데이터 준비 (FastAPI snake_case 맞춤)
         Map<String, Object> analysisRequest = new HashMap<>();
-        analysisRequest.put("prev_turn", prevTurn);  // ✅ snake_case
+        analysisRequest.put("prev_turn", prevTurn);  // snake_case
         analysisRequest.put("theme", theme);
 
         Map<String, Object> request = new HashMap<>();
         request.put("file_path", savedFileName);
         request.put("task_id", taskId);
         request.put("type", "conversation");  // 대화 분석 타입
-        request.put("analysis_request", analysisRequest);  // ✅ snake_case
+        request.put("analysis_request", analysisRequest);  // snake_case
 
         // AI 서버로 전송 (conversation.jobs 큐)
         aiClient.sendConversationJob(request);

@@ -3,7 +3,7 @@ package com.example.backend.domain.curriculum.entity;
 import lombok.Getter;
 
 /**
- * ✅ 발음 평가 등급 (error_level 기반)
+ * 발음 평가 등급 (error_level 기반)
  * - 낮을수록 좋음 (1 = Perfect, 4 = Try Again)
  */
 @Getter
@@ -24,7 +24,7 @@ public enum Grade {
     }
 
     /**
-     * ✅ error_level → Grade 변환
+     * error_level → Grade 변환
      * @param errorLevel AI 응답의 error_level (0~3)
      * @return 해당하는 Grade
      */
@@ -46,7 +46,7 @@ public enum Grade {
     }
 
     /**
-     * ✅ grade level → Grade 변환
+     * grade level → Grade 변환
      * @param gradeLevel 등급 레벨 (1~4)
      * @return 해당하는 Grade
      */
