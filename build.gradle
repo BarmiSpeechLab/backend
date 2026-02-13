@@ -1,0 +1,91 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.1'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+description = 'backend'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // 서버 상태 체크
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    // ==========================================
+    // 1. 웹 프레임워크
+    // ==========================================
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // 유효성 검사 (@NotNull 등)
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // ==========================================
+    // 2. 개발 편의 도구
+    // ==========================================
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    // ==========================================
+    // 3. 데이터베이스 (하이브리드: MySQL + MongoDB)
+    // ==========================================
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // ==========================================
+    // 4. 보안 (Security + OAuth2 + JWT)
+    // 아직 고민중,,,
+    // ==========================================
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+//    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+//
+    // JWT 라이브러리
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
+
+    // ==========================================
+    // 5. API 문서 (Swagger) - ★추가됨
+    // ==========================================
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+
+    // ==========================================
+    // 6. 테스트 (하나로 통합)
+    // ==========================================
+    // 이것 하나면 JPA, MVC 테스트 다 됩니다.
+    // 굳이 webmvc-test, jpa-test 따로 적을 필요 없습니다.
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+
+    // ==========================================
+    // 7. RabbitMQ와 통신하기 위한 필수 라이브러리
+    // ==========================================
+    implementation 'org.springframework.boot:spring-boot-starter-amqp'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testRuntimeOnly 'com.h2database:h2'
+
+    // ==========================================
+    // 8. OpenVidu (화상회의)
+    // ==========================================
+    implementation 'io.openvidu:openvidu-java-client:2.30.0'
+
+    // ==========================================
+    // 9. 스프링 캐시
+    // ==========================================
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

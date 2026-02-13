@@ -1,0 +1,85 @@
+package com.example.backend.domain.user.controller;
+
+import com.example.backend.domain.user.dto.SignUpRequest;
+import com.example.backend.domain.user.dto.UpdateRequest;
+import com.example.backend.domain.user.dto.UserResponse;
+import com.example.backend.domain.user.service.UserService;
+import com.example.backend.global.auth.dto.LoginRequest;
+import com.example.backend.global.auth.dto.TokenResponse;
+import com.example.backend.global.auth.service.AuthService;
+import com.example.backend.global.dto.ApiResponse;
+import com.example.backend.global.userdetails.CustomUserDetails;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequiredArgsConstructor
+@Tag(name = "유저 기능 API", description = "유저 데이터 관리용 API입니다")
+@RequestMapping("/api/users")
+public class UserController {
+
+    private final UserService userService;
+    private final AuthService authService;
+
+    @Operation(summary = "회원가입 API", description = "회원가입을 요청합니다.")
+    @PostMapping("/signup")
+    public ResponseEntity<ApiResponse<String>> signup(@RequestBody SignUpRequest signUpRequest) {
+        userService.createUser(signUpRequest);
+        return ResponseEntity.ok(ApiResponse.success("회원가입 성공"));
+    }
+
+    @Operation(summary = "로그인 API", description = "로그인을 요청합니다.")
+    @PostMapping("/login")
+    public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request) {
+        TokenResponse tokenResponse = authService.login(request);
+        return ResponseEntity.ok(tokenResponse);
+    }
+
+    @Operation(summary = "로그아웃 API", description = "리프레시 토큰 미구현으로 인해 아직 개발중인 API입니다.")
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<String>> logout(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        authService.logout(userDetails.getUserId());
+        return ResponseEntity.ok(ApiResponse.success("로그아웃 성공"));
+    }
+
+    @Operation(summary = "유저 정보 조회 API", description = "유저 정보를 요청합니다.")
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponse>> getMyInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        UserResponse response = userService.getMyInfo(userDetails.getUserId());
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "유저 정보 수정 API", description = "유저의 정보 수정을 요청합니다.")
+    @PutMapping("/me")
+    public ResponseEntity<ApiResponse<String>> updateMyInfo(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody UpdateRequest request) {
+        userService.updateMyInfo(userDetails.getUserId(), request);
+        return ResponseEntity.ok(ApiResponse.success("정보 수정 완료"));
+    }
+
+    @Operation(summary = "회원 탈퇴 API", description = "회원탈퇴를 요청합니다.")
+    @DeleteMapping("/me")
+    public ResponseEntity<ApiResponse<String>> withdraw(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        userService.withdraw(userDetails.getUserId());
+        return ResponseEntity.ok(ApiResponse.success("회원 탈퇴 완료"));
+    }
+    @Operation(summary = "온보딩 완료 처리 API", description = "튜토리얼 완료 후 온보딩 요청합니다.")
+    @PutMapping("/tutorial")
+    public ResponseEntity<ApiResponse<String>> completeTutorial(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        userService.completeTutorial(userDetails.getUserId());
+        return ResponseEntity.ok(ApiResponse.success("온보딩 완료 처리 성공"));
+    }
+    
+    @Operation(summary = "튜터 목록 조회 API", description = "role이 TUTOR인 유저 목록을 반환합니다.")
+    @GetMapping("/tutors")
+    public ResponseEntity<ApiResponse<java.util.List<com.example.backend.domain.user.entity.User>>> getTutors() {
+        java.util.List<com.example.backend.domain.user.entity.User> tutors = userService.findTutors();
+        return ResponseEntity.ok(ApiResponse.success(tutors));
+    }
+}

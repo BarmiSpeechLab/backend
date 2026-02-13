@@ -1,3 +1,51 @@
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### Security ###\
+# 로컬 환경 구동을 위해 추가
+.env
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Logs ###
+*.log
 # OS
 .DS_Store
 Thumbs.db
@@ -23,9 +71,7 @@ venv/
 
 # Build
 dist/
-build/
 .next/
-out/
 
 # Logs
 *.log
@@ -41,3 +87,12 @@ checkpoints/
 # Misc
 .cache/
 coverage/
+
+# DB 데이터 무시
+db_data/
+db.data/
+mysql-data/
+*.ibd
+
+### Spring Boot ###
+src/main/resources/application.yml
